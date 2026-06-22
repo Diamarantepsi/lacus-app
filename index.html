@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#080808" />
+  <meta name="description" content="LACUS Jiu-Jitsu — acompanhe sua evolução, frequência e graduação no tatame." />
+  <title>LACUS · Jiu-Jitsu</title>
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/icon-192.svg" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/styles.css?v=2" />
+</head>
+<body>
+  <!-- Atmospheric background layers -->
+  <div class="bg-mesh" aria-hidden="true"></div>
+  <div class="bg-grain" aria-hidden="true"></div>
+
+  <!-- App shell -->
+  <div id="app" class="app-shell">
+    <!-- Views are rendered here -->
+    <main id="view" class="view" role="main"></main>
+  </div>
+
+  <!-- Bottom navigation -->
+  <nav id="tabbar" class="tabbar" aria-label="Navegação principal">
+    <button class="tab" data-route="inicio" aria-label="Início">
+      <svg viewBox="0 0 24 24" class="tab-ic"><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
+      <span>Início</span>
+    </button>
+    <button class="tab" data-route="agenda" aria-label="Agenda">
+      <svg viewBox="0 0 24 24" class="tab-ic"><path d="M7 2v3M17 2v3M3 8h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg>
+      <span>Agenda</span>
+    </button>
+    <button class="tab tab--center" data-route="checkin" aria-label="Fazer check-in">
+      <span class="tab-fab">
+        <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+      </span>
+      <span class="tab-fab-label">Check-in</span>
+    </button>
+    <button class="tab" data-route="evolucao" aria-label="Evolução">
+      <svg viewBox="0 0 24 24" class="tab-ic"><path d="M3 21h18M6 21V9m5 12V4m5 17v-8"/></svg>
+      <span>Evolução</span>
+    </button>
+    <button class="tab" data-route="perfil" aria-label="Perfil">
+      <svg viewBox="0 0 24 24" class="tab-ic"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+      <span>Perfil</span>
+    </button>
+  </nav>
+
+  <!-- Toast host -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Modal host -->
+  <div id="modal-root"></div>
+
+  <script src="js/data.js?v=2"></script>
+  <script src="js/store.js?v=2"></script>
+  <script src="js/app.js?v=2"></script>
+</body>
+</html>

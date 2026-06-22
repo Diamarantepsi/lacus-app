@@ -1,0 +1,6 @@
+# Ferramentas locais de desenvolvimento (não vão para o site publicado)
+.claude/
+
+# Sistema
+Thumbs.db
+.DS_Store

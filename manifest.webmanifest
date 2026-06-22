@@ -1,0 +1,17 @@
+{
+  "name": "LACUS Jiu-Jitsu",
+  "short_name": "LACUS",
+  "description": "Acompanhe sua evolução, frequência e graduação no Jiu-Jitsu.",
+  "lang": "pt-BR",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080808",
+  "theme_color": "#080808",
+  "categories": ["sports", "lifestyle", "health"],
+  "icons": [
+    { "src": "assets/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "assets/icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -182,17 +182,18 @@ h1, h2, h3 { font-family: var(--fh); font-weight: 600; letter-spacing: 0.01em; l
 .degree-pills i { width: 7px; height: 20px; border-radius: 3px; background: rgba(255,255,255,0.10); }
 .degree-pills i.on { background: linear-gradient(var(--gold2), var(--gold)); box-shadow: 0 0 10px -2px var(--gold); }
 
-/* Visual belt bar */
+/* Visual belt bar — cor da faixa, ponta preta com divisas, e um trecho de cor no fim */
 .belt-bar { height: 26px; border-radius: 6px; display: flex; overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 6px 18px -10px #000; }
 .belt-bar .belt-fill { flex: 1; }
-.belt-bar .belt-tip { width: 64px; background: #0c0c0c; position: relative; display: flex; align-items: center; gap: 4px; padding-left: 9px; }
+.belt-bar .belt-tip { width: 54px; flex-shrink: 0; background: #0c0c0c; position: relative; display: flex; align-items: center; gap: 4px; padding-left: 8px; }
 .belt-bar .belt-tip i { width: 5px; height: 100%; background: #fff; opacity: 0.92; }
+.belt-bar .belt-end { width: 15px; flex-shrink: 0; }
 .belt-bar.tip-red .belt-tip { background: linear-gradient(180deg, #b3221b, #7e120c); }
-.belt--white .belt-fill { background: linear-gradient(180deg, #f3f0ea, #d8d3ca); }
-.belt--blue .belt-fill { background: linear-gradient(180deg, #2f6ff0, #1d4fd0); }
-.belt--purple .belt-fill { background: linear-gradient(180deg, #8b46f0, #6d28d9); }
-.belt--brown .belt-fill { background: linear-gradient(180deg, #7d4f2a, #5a3819); }
-.belt--black .belt-fill { background: linear-gradient(180deg, #232323, #0c0c0c); }
+.belt--white .belt-fill, .belt--white .belt-end { background: linear-gradient(180deg, #f3f0ea, #d8d3ca); }
+.belt--blue .belt-fill, .belt--blue .belt-end { background: linear-gradient(180deg, #2f6ff0, #1d4fd0); }
+.belt--purple .belt-fill, .belt--purple .belt-end { background: linear-gradient(180deg, #8b46f0, #6d28d9); }
+.belt--brown .belt-fill, .belt--brown .belt-end { background: linear-gradient(180deg, #7d4f2a, #5a3819); }
+.belt--black .belt-fill, .belt--black .belt-end { background: linear-gradient(180deg, #232323, #0c0c0c); }
 
 .belt-progress { margin-top: 16px; }
 .belt-progress .pr-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
@@ -536,6 +537,75 @@ h1, h2, h3 { font-family: var(--fh); font-weight: 600; letter-spacing: 0.01em; l
 .link { color: var(--teal); font-weight: 500; }
 .row-between { display: flex; align-items: center; justify-content: space-between; }
 .see-all { font-family: var(--fm); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--teal2); }
+
+/* ---------- Textarea (modais) ---------- */
+.field textarea {
+  width: 100%; padding: 12px 14px; border-radius: var(--r); background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-strong); font-size: 14.5px; outline: none; resize: vertical;
+  line-height: 1.5; transition: 0.2s; font-family: var(--fb);
+}
+.field textarea:focus { border-color: var(--teal); }
+
+/* ---------- Feedback do professor (lado do aluno) ---------- */
+.coach-msg { padding: 13px 0; border-bottom: 1px solid var(--border); }
+.coach-msg:last-child { border-bottom: none; padding-bottom: 2px; }
+.cm-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+.cm-from { display: inline-flex; align-items: center; gap: 7px; font-family: var(--fm); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold2); }
+.cm-from svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; fill: none; }
+.cm-body { font-size: 13.5px; color: var(--txt); line-height: 1.6; }
+.coach-eval { padding: 13px 0; border-bottom: 1px solid var(--border); }
+.coach-eval:last-child { border-bottom: none; padding-bottom: 2px; }
+.ce-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.ce-aula { font-family: var(--fh); font-size: 14px; color: var(--teal); text-transform: uppercase; letter-spacing: 0.03em; }
+.ce-line { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin-bottom: 4px; }
+.ce-line b { color: var(--txt); font-weight: 600; }
+
+/* ---------- Área do professor ---------- */
+.prof-top { display: flex; align-items: center; justify-content: space-between; padding: 6px 0 12px; }
+.prof-badge {
+  display: inline-flex; align-items: center; gap: 8px; font-family: var(--fm); font-size: 10px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold2);
+  padding: 7px 13px; border-radius: var(--r-pill); background: rgba(232,160,32,0.10);
+  border: 1px solid rgba(232,160,32,0.25);
+}
+.prof-badge svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+.prof-row {
+  display: flex; align-items: center; gap: 13px; width: 100%; text-align: left; margin-bottom: 11px;
+  padding: 14px; border-radius: var(--r); background: linear-gradient(160deg, var(--s2), var(--s1));
+  border: 1px solid var(--border); transition: 0.2s;
+}
+.prof-row:active { transform: scale(0.98); }
+.prow-av {
+  width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0;
+  font-family: var(--fh); font-weight: 600; font-size: 18px; color: #04181d;
+  background: linear-gradient(140deg, var(--teal), var(--teal2));
+}
+.prow-info { flex: 1; min-width: 0; }
+.prow-info .nm { font-family: var(--fh); font-size: 16px; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.prow-info .meta { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); margin-top: 2px; }
+.prow-info .last { font-family: var(--fm); font-size: 9.5px; letter-spacing: 0.04em; color: var(--faint); text-transform: uppercase; margin-top: 5px; }
+.me-chip { font-family: var(--fm); font-size: 8.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 7px; border-radius: var(--r-pill); background: rgba(111,213,231,0.14); color: var(--teal); }
+.prof-row .chev { color: var(--faint); }
+.prof-row .chev svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+.prof-aluno-hero { text-align: center; padding: 6px 0 2px; }
+.prof-aluno-hero .pn { font-family: var(--fh); font-size: 22px; font-weight: 600; margin-top: 12px; }
+.prof-aluno-hero .pm { font-family: var(--fm); font-size: 11px; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; margin-top: 4px; }
+.prof-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.av-card, .msg-card { margin-bottom: 12px; }
+.msg-card { border-color: rgba(232,160,32,0.22); background: linear-gradient(160deg, rgba(232,160,32,0.06), var(--s1)); }
+.nt-msg { display: inline-flex; align-items: center; gap: 7px; font-family: var(--fm); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold2); }
+.nt-av { display: inline-flex; align-items: center; gap: 7px; font-family: var(--fh); font-size: 14px; letter-spacing: 0.03em; text-transform: uppercase; color: var(--teal); }
+.nt-msg svg, .nt-av svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; fill: none; }
+.av-field { margin-top: 10px; }
+.av-field .avl { font-family: var(--fm); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); margin-bottom: 3px; }
+.av-field .avv { font-size: 13px; color: var(--txt); line-height: 1.55; }
+
+/* esconde a navegação do aluno quando em modo professor */
+body.prof-mode .tabbar { display: none; }
+body.prof-mode .view { padding-bottom: calc(env(safe-area-inset-bottom) + 30px); }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.05ms !important; }

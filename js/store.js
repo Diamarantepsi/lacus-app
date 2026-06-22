@@ -55,6 +55,7 @@ window.LACUS_STORE = (function () {
       if (raw) {
         const s = JSON.parse(raw);
         if (!s.checkins) s.checkins = seedCheckins();
+        ensureCoach(s);
         return s;
       }
     } catch (e) { /* ignore */ }
@@ -62,8 +63,88 @@ window.LACUS_STORE = (function () {
     fresh.checkins = seedCheckins();
     // marca algumas técnicas como aprendidas para faixa azul
     ['t01', 't02', 't03', 't05', 't06', 't08', 't09', 't11'].forEach(id => fresh.tecnicas[id] = true);
+    ensureCoach(fresh);
     save(fresh);
     return fresh;
+  }
+
+  /* ---- Área do professor (turma, avaliações, mensagens) ---- */
+  function dago(n) { const d = new Date(); d.setDate(d.getDate() - n); return todayISO(d); }
+
+  function defaultCoach() {
+    return {
+      pin: null,
+      alunos: [
+        { id: 'a1', nome: 'Lucas Andrade', belt: 'white', graus: 3,
+          avaliacoes: [{ date: dago(2), aula: 'Fundamentos',
+            execucao: 'Armlock da guarda fechada com o quadril mais alto — finalização bem mais limpa.',
+            posicoes: 'Reteve melhor a guarda fechada sob pressão.',
+            destaques: 'Boa intensidade nos rolas, não desistiu das posições.',
+            melhorar: 'Cuidar da postura ao montar para não perder as costas.' }],
+          mensagens: [] },
+        { id: 'a2', nome: 'Marina Costa', belt: 'blue', graus: 1,
+          avaliacoes: [{ date: dago(5), aula: 'Performance Pro',
+            execucao: 'Passagem toreando mais rápida e com timing melhor.',
+            posicoes: 'Transição para as costas bem encaixada.',
+            destaques: 'Segurou bem o jogo contra parceiros maiores.',
+            melhorar: 'Finalizar com mais calma, sem afobar o estrangulamento.' }],
+          mensagens: [{ date: dago(5), texto: 'Evolução muito boa este mês, Marina. Mantém essa pegada que o 2º grau vem logo.' }] },
+        { id: 'a3', nome: 'Pedro Henrique', belt: 'purple', graus: 2, avaliacoes: [], mensagens: [] },
+        { id: 'a4', nome: 'Júlia Ramos', belt: 'white', graus: 0, avaliacoes: [], mensagens: [] },
+      ],
+    };
+  }
+
+  function seedMeFeedback(me) {
+    me.mensagens = [{ date: dago(3), texto: 'Parabéns pela constância no tatame! Seu jogo de guarda está mais sólido. Foco agora nas passagens de pressão.' }];
+    me.avaliacoes = [{ date: dago(3), aula: 'Fundamentos',
+      execucao: 'Triângulo com ângulo melhor e bom controle da postura do parceiro.',
+      posicoes: 'Recuperação de guarda mais consistente.',
+      destaques: 'Treino forte, ótimo volume de rola.',
+      melhorar: 'Trabalhar a base na hora de passar a guarda.' }];
+  }
+
+  // Garante o objeto coach e o aluno "me" (este aparelho), sincronizado com o perfil.
+  function ensureCoach(s) {
+    if (!s.coach) s.coach = defaultCoach();
+    if (!Array.isArray(s.coach.alunos)) s.coach.alunos = defaultCoach().alunos;
+    let me = s.coach.alunos.find(a => a.id === 'me');
+    if (!me) {
+      me = { id: 'me', nome: s.perfil.nome, belt: s.perfil.belt, graus: s.perfil.graus, avaliacoes: [], mensagens: [] };
+      seedMeFeedback(me);
+      s.coach.alunos.unshift(me);
+    }
+    // identidade do "me" sempre espelha o perfil; e fica no topo da lista
+    me.nome = s.perfil.nome; me.belt = s.perfil.belt; me.graus = s.perfil.graus;
+    s.coach.alunos = [me].concat(s.coach.alunos.filter(a => a.id !== 'me'));
+  }
+
+  function getAlunos() { return state.coach.alunos; }
+  function getAluno(id) { return state.coach.alunos.find(a => a.id === id); }
+  function coachHasPin() { return !!(state.coach && state.coach.pin); }
+  function coachSetPin(p) { state.coach.pin = String(p); save(); }
+  function coachCheck(p) { return state.coach.pin === String(p); }
+  function addAluno(nome, belt, graus) {
+    const a = { id: 'a' + Date.now(), nome: nome || 'Novo aluno', belt: belt || 'white', graus: graus || 0, avaliacoes: [], mensagens: [] };
+    state.coach.alunos.push(a); save(); return a;
+  }
+  function addAvaliacao(id, data) {
+    const a = getAluno(id); if (!a) return;
+    a.avaliacoes.unshift(Object.assign({ date: todayISO() }, data)); save();
+  }
+  function addMensagem(id, texto) {
+    const a = getAluno(id); if (!a || !texto) return;
+    a.mensagens.unshift({ date: todayISO(), texto: texto }); save();
+  }
+  function promover(id, belt, graus) {
+    const a = getAluno(id); if (!a) return;
+    a.belt = belt; a.graus = graus;
+    if (id === 'me') { state.perfil.belt = belt; state.perfil.graus = graus; }
+    save();
+  }
+  function feedbackForMe() {
+    const me = getAluno('me') || { mensagens: [], avaliacoes: [] };
+    return { mensagens: me.mensagens || [], avaliacoes: me.avaliacoes || [] };
   }
 
   function save(s) {
@@ -134,7 +215,12 @@ window.LACUS_STORE = (function () {
     save();
     return !!state.tecnicas[id];
   }
-  function updatePerfil(patch) { Object.assign(state.perfil, patch); save(); }
+  function updatePerfil(patch) {
+    Object.assign(state.perfil, patch);
+    const me = getAluno('me');
+    if (me) { me.nome = state.perfil.nome; me.belt = state.perfil.belt; me.graus = state.perfil.graus; }
+    save();
+  }
   function reset() { localStorage.removeItem(KEY); state = load(); }
 
   return {
@@ -143,5 +229,8 @@ window.LACUS_STORE = (function () {
     checkinsThisMonth, totalCheckins, totalHoras, streak, checkedToday,
     tecnicasAprendidas, monthlyCounts,
     addCheckin, toggleTecnica, updatePerfil, reset, save,
+    // área do professor
+    getAlunos, getAluno, coachHasPin, coachSetPin, coachCheck,
+    addAluno, addAvaliacao, addMensagem, promover, feedbackForMe,
   };
 })();

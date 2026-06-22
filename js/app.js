@@ -40,6 +40,12 @@
     map: '<path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3z"/><path d="M9 3v15M15 6v15"/>',
     dumbbell: '<path d="M6 6v12M3 9v6M18 6v12M21 9v6M6 12h12"/>',
     whistle: '<path d="M4 13a5 5 0 1 0 5-5h7l-2-3M14 8l5 2"/>',
+    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    users: '<circle cx="9" cy="8" r="3.2"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6.1M21.2 20a6.2 6.2 0 0 0-4.2-5.4"/>',
+    send: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/>',
+    clipboard: '<rect x="7" y="4" width="10" height="17" rx="2"/><path d="M9 4h6v3H9z"/><path d="M9.5 11h5M9.5 15h3"/>',
+    medal: '<circle cx="12" cy="14" r="6"/><path d="M8.5 9 6 3h4l2 4M15.5 9 18 3h-4l-2 4M12 12v4M10 14h4"/>',
+    x: '<path d="M6 6l12 12M18 6 6 18"/>',
   };
   const svg = (k, cls) => `<svg viewBox="0 0 24 24" ${cls ? `class="${cls}"` : ''} fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${I[k] || ''}</svg>`;
 
@@ -97,6 +103,7 @@
       <div class="belt-bar ${b.cls}${isBlack ? ' tip-red' : ''}">
         <div class="belt-fill"></div>
         <div class="belt-tip">${stripes}</div>
+        <div class="belt-end"></div>
       </div>`;
   }
 
@@ -365,6 +372,32 @@
 
     const goals = renderGoals();
 
+    // Feedback do professor (mensagens no caminho das faixas + avaliações de treino)
+    const fb = S.feedbackForMe();
+    const msgs = (fb.mensagens || []).slice(0, 4);
+    const avs = (fb.avaliacoes || []).slice(0, 4);
+    const msgCard = msgs.length ? `
+      <div class="card">
+        <div class="card-head"><span class="section-title">Mensagens do professor</span></div>
+        ${msgs.map(m => `
+          <div class="coach-msg">
+            <div class="cm-top"><span class="cm-from">${svg('whistle')} Professor</span><span class="nd">${relDate(m.date)}</span></div>
+            <div class="cm-body">${m.texto}</div>
+          </div>`).join('')}
+      </div>` : '';
+    const avCard = avs.length ? `
+      <div class="card">
+        <div class="card-head"><span class="section-title">Avaliações de treino</span></div>
+        ${avs.map(a => `
+          <div class="coach-eval">
+            <div class="ce-top"><span class="ce-aula">${a.aula || 'Treino'}</span><span class="nd">${relDate(a.date)}</span></div>
+            ${a.execucao ? `<div class="ce-line"><b>Execução:</b> ${a.execucao}</div>` : ''}
+            ${a.posicoes ? `<div class="ce-line"><b>Posições:</b> ${a.posicoes}</div>` : ''}
+            ${a.destaques ? `<div class="ce-line"><b>Destaques:</b> ${a.destaques}</div>` : ''}
+            ${a.melhorar ? `<div class="ce-line"><b>A desenvolver:</b> ${a.melhorar}</div>` : ''}
+          </div>`).join('')}
+      </div>` : '';
+
     return `
     <div class="phead">
       <span class="eyebrow">Sua jornada</span>
@@ -381,6 +414,9 @@
         <div class="card-head"><span class="section-title">Metas</span></div>
         ${goals}
       </div>
+
+      ${msgCard}
+      ${avCard}
 
       <div class="card">
         <div class="card-head"><span class="section-title">Caminho das faixas</span></div>
@@ -494,6 +530,15 @@
       </button>
     </div>
 
+    <div class="divider-label"><span class="section-title">Equipe</span></div>
+    <div class="card list-card stagger">
+      <button class="list-item" data-action="professor">
+        <div class="lic" style="color:var(--gold2);background:rgba(232,160,32,0.10)">${svg('lock')}</div>
+        <div class="lt"><div class="a">Área do Professor</div><div class="b">Acesso restrito · avaliar alunos e enviar feedback</div></div>
+        <span class="chev">${svg('chevron')}</span>
+      </button>
+    </div>
+
     <div class="divider-label"><span class="section-title">App</span></div>
     <div class="card list-card stagger">
       <button class="list-item" data-action="compartilhar">
@@ -559,6 +604,97 @@
     </div>
     <div class="spacer"></div>
     <button class="btn btn--ghost btn--block" data-action="info-pagamento">${svg('info')} Como pagar</button>`;
+  }
+
+  /* ================================================================
+     ÁREA DO PROFESSOR (restrita por PIN)
+     ================================================================ */
+  let selectedAluno = null;
+
+  function viewProf() {
+    const alunos = S.getAlunos();
+    return `
+    <div class="prof-top">
+      <span class="prof-badge">${svg('lock')} Modo Professor</span>
+      <button class="icon-btn" data-action="prof-exit" aria-label="Sair do modo professor">${svg('x')}</button>
+    </div>
+    <div class="phead">
+      <span class="eyebrow">Turma LACUS</span>
+      <h1 class="page-title">Alunos</h1>
+      <p>${alunos.length} ${alunos.length === 1 ? 'aluno' : 'alunos'} · toque para avaliar</p>
+    </div>
+    <button class="btn btn--gold btn--block" data-action="add-aluno">${svg('plus')} Adicionar aluno</button>
+    <div class="spacer"></div>
+    <div class="stagger">${alunos.map(profAlunoRow).join('')}</div>`;
+  }
+
+  function profAlunoRow(a) {
+    const b = beltById(a.belt);
+    const last = (a.avaliacoes && a.avaliacoes[0]);
+    const lastTxt = last ? ('Última avaliação · ' + relDate(last.date)) : 'Sem avaliações ainda';
+    const nMsg = (a.mensagens || []).length;
+    const isMe = a.id === 'me';
+    return `
+    <button class="prof-row" data-aluno="${a.id}">
+      <div class="prow-av">${initials(a.nome)}</div>
+      <div class="prow-info">
+        <div class="nm">${a.nome}${isMe ? ' <span class="me-chip">você</span>' : ''}</div>
+        <div class="meta"><span class="belt-dot ${b.dot}"></span>${b.nome.replace('Faixa ', '')} · ${a.graus} ${a.graus === 1 ? 'grau' : 'graus'}</div>
+        <div class="last">${lastTxt}${nMsg ? ' · ' + nMsg + ' msg' : ''}</div>
+      </div>
+      <span class="chev">${svg('chevron')}</span>
+    </button>`;
+  }
+
+  function viewProfAluno() {
+    const a = S.getAluno(selectedAluno);
+    if (!a) return viewProf();
+    const b = beltById(a.belt);
+    const items = []
+      .concat((a.avaliacoes || []).map(x => Object.assign({ _t: 'av' }, x)))
+      .concat((a.mensagens || []).map(x => Object.assign({ _t: 'msg' }, x)))
+      .sort((x, y) => (x.date < y.date ? 1 : -1));
+    const timeline = items.length ? items.map(profTimelineItem).join('')
+      : emptyState('Sem registros ainda', 'Avalie o treino ou envie uma mensagem.');
+    return `
+    <div class="prof-top">
+      <button class="icon-btn" data-back-prof="1" aria-label="Voltar">${svg('arrowLeft')}</button>
+      <span class="prof-badge">${svg('lock')} Modo Professor</span>
+      <span style="width:42px"></span>
+    </div>
+    <div class="prof-aluno-hero">
+      <div class="avatar" style="width:74px;height:74px;font-size:28px">${initials(a.nome)}</div>
+      <div class="pn">${a.nome}</div>
+      <div class="pm">${b.nome} · ${a.graus} ${a.graus === 1 ? 'grau' : 'graus'}</div>
+    </div>
+    <div style="margin:18px 0 16px">${beltBar(a.belt, a.graus)}</div>
+    <div class="prof-actions">
+      <button class="btn btn--teal" data-action="nova-avaliacao">${svg('clipboard')} Avaliar treino</button>
+      <button class="btn btn--ghost" data-action="nova-mensagem">${svg('send')} Mensagem</button>
+    </div>
+    <button class="btn btn--gold btn--block" style="margin-top:10px" data-action="promover">${svg('medal')} Graduar / dar grau</button>
+    <div class="divider-label"><span class="section-title">Histórico de treinos</span></div>
+    <div class="stagger">${timeline}</div>`;
+  }
+
+  function profTimelineItem(it) {
+    if (it._t === 'msg') {
+      return `<div class="card msg-card">
+        <div class="ce-top"><span class="nt-msg">${svg('send')} Mensagem · caminho das faixas</span><span class="nd">${relDate(it.date)}</span></div>
+        <div class="cm-body">${it.texto}</div>
+      </div>`;
+    }
+    return `<div class="card av-card">
+      <div class="ce-top"><span class="nt-av">${svg('clipboard')} ${it.aula || 'Treino'}</span><span class="nd">${relDate(it.date)}</span></div>
+      ${avField('Execução dos golpes', it.execucao)}
+      ${avField('Posições / transições', it.posicoes)}
+      ${avField('Destaques do dia', it.destaques)}
+      ${avField('Pontos a desenvolver', it.melhorar)}
+    </div>`;
+  }
+  function avField(label, val) {
+    if (!val) return '';
+    return `<div class="av-field"><div class="avl">${label}</div><div class="avv">${val}</div></div>`;
   }
 
   /* ---------------- shared bits ---------------- */
@@ -641,6 +777,12 @@
     const cr = e.target.closest('[data-class]');
     if (cr) { const c = JSON.parse(cr.dataset.class.replace(/&#39;/g, "'")); promptCheckin(c.nome, c.hora); return; }
 
+    // professor: abrir aluno
+    const al = e.target.closest('[data-aluno]');
+    if (al) { selectedAluno = al.dataset.aluno; navigate('prof-aluno'); return; }
+    const bp = e.target.closest('[data-back-prof]');
+    if (bp) { navigate('prof'); return; }
+
     // big check-in
     if (e.target.closest('#bigcheck')) { openCheckinModal(); return; }
 
@@ -680,6 +822,13 @@
     if (a === 'reset') return openResetModal();
     if (a === 'compartilhar') return shareApp();
     if (a === 'info-pagamento') return toast('Procure a recepção ou o PIX da academia', 'info');
+    // professor
+    if (a === 'professor') return openProfessorGate();
+    if (a === 'prof-exit') { professorUnlocked = false; navigate('perfil'); return; }
+    if (a === 'add-aluno') return openAddAlunoModal();
+    if (a === 'nova-avaliacao') return openAvaliacaoModal();
+    if (a === 'nova-mensagem') return openMensagemModal();
+    if (a === 'promover') return openPromoverModal();
   }
 
   /* ---- check-in flows ---- */
@@ -690,7 +839,7 @@
     const opts = aulas.map(a => `
       <button class="opt" data-pick='${JSON.stringify({n:a.nome,h:a.hora}).replace(/'/g,"&#39;")}'>
         <div class="oi" style="background:rgba(37,211,102,0.12);color:var(--green)">${svg('check')}</div>
-        <div class="ot"><div class="a">${a.nome}</div><div class="b">${a.hora} · ${a.prof}</div></div>
+        <div class="ot"><div class="a">${a.nome}</div><div class="b">${[a.hora, a.nivel, a.prof].filter(Boolean).join(' · ')}</div></div>
       </button>`).join('') || `<button class="opt" data-pick='{"n":"Treino livre","h":""}'>
         <div class="oi" style="background:rgba(37,211,102,0.12);color:var(--green)">${svg('check')}</div>
         <div class="ot"><div class="a">Treino livre</div><div class="b">Registrar presença</div></div></button>`;
@@ -771,6 +920,108 @@
     catch (e) { openModal(`<h3>Compartilhar app</h3><div class="msub">Copie e envie este link:</div><div class="field"><input type="text" value="${url}" readonly onclick="this.select()"/></div><button class="btn btn--teal btn--block" onclick="this.closest('.modal-back').classList.remove('show');setTimeout(()=>document.getElementById('modal-root').innerHTML='',280)">Fechar</button>`); }
   }
 
+  /* ---- professor: PIN gate + modais ---- */
+  function openProfessorGate() {
+    if (professorUnlocked) { navigate('prof'); return; }
+    if (!S.coachHasPin()) {
+      const back = openModal(`
+        <h3>Área do Professor</h3>
+        <div class="msub">Crie um PIN para proteger o acesso. Só o professor deve conhecê-lo.</div>
+        <div class="field"><label>Novo PIN (mín. 4 dígitos)</label><input id="p1" type="password" inputmode="numeric" maxlength="8" placeholder="••••"/></div>
+        <div class="field"><label>Confirmar PIN</label><input id="p2" type="password" inputmode="numeric" maxlength="8" placeholder="••••"/></div>
+        <button class="btn btn--gold btn--block" id="pset">${svg('lock')} Criar e entrar</button>`);
+      back.querySelector('#pset').addEventListener('click', () => {
+        const v = back.querySelector('#p1').value, c = back.querySelector('#p2').value;
+        if (v.length < 4) return toast('O PIN precisa de ao menos 4 dígitos', 'info');
+        if (v !== c) return toast('Os PINs não coincidem', 'info');
+        S.coachSetPin(v); professorUnlocked = true; closeModal(); toast('Área do professor criada 🔐', 'lock'); navigate('prof');
+      });
+    } else {
+      const back = openModal(`
+        <h3>Área do Professor</h3>
+        <div class="msub">Digite seu PIN para acessar a área restrita.</div>
+        <div class="field"><label>PIN</label><input id="p1" type="password" inputmode="numeric" maxlength="8" placeholder="••••"/></div>
+        <button class="btn btn--gold btn--block" id="pok">${svg('lock')} Entrar</button>`);
+      const tryPin = () => {
+        if (S.coachCheck(back.querySelector('#p1').value)) { professorUnlocked = true; closeModal(); navigate('prof'); }
+        else toast('PIN incorreto', 'info');
+      };
+      back.querySelector('#pok').addEventListener('click', tryPin);
+      back.querySelector('#p1').addEventListener('keydown', e => { if (e.key === 'Enter') tryPin(); });
+    }
+  }
+
+  function openAddAlunoModal() {
+    const beltOpts = D.BELTS.map(x => `<option value="${x.id}">${x.nome}</option>`).join('');
+    const grauOpts = Array.from({ length: 7 }, (_, i) => `<option value="${i}">${i} ${i === 1 ? 'grau' : 'graus'}</option>`).join('');
+    const back = openModal(`
+      <h3>Adicionar aluno</h3>
+      <div class="msub">Cadastre um novo aluno na turma.</div>
+      <div class="field"><label>Nome</label><input id="al-nome" type="text" maxlength="40" placeholder="Nome do aluno"/></div>
+      <div class="field"><label>Faixa</label><select id="al-belt">${beltOpts}</select></div>
+      <div class="field"><label>Graus</label><select id="al-graus">${grauOpts}</select></div>
+      <button class="btn btn--gold btn--block" id="al-save">${svg('plus')} Adicionar</button>`);
+    back.querySelector('#al-save').addEventListener('click', () => {
+      const nome = back.querySelector('#al-nome').value.trim();
+      if (!nome) return toast('Informe o nome', 'info');
+      S.addAluno(nome, back.querySelector('#al-belt').value, parseInt(back.querySelector('#al-graus').value) || 0);
+      closeModal(); toast('Aluno adicionado ✓', 'check'); render('prof');
+    });
+  }
+
+  function openAvaliacaoModal() {
+    const names = [...new Set(D.SCHEDULE.map(s => s.nome))];
+    const opts = names.map(n => `<option>${n}</option>`).join('') + '<option>Treino livre</option>';
+    const back = openModal(`
+      <h3>Avaliar treino</h3>
+      <div class="msub">O que você observou neste aluno hoje.</div>
+      <div class="field"><label>Aula</label><select id="av-aula">${opts}</select></div>
+      <div class="field"><label>Melhora na execução dos golpes</label><textarea id="av-exec" rows="2" placeholder="Ex.: armlock com o quadril mais alto..."></textarea></div>
+      <div class="field"><label>Posições / transições</label><textarea id="av-pos" rows="2" placeholder="Ex.: reteve melhor a guarda..."></textarea></div>
+      <div class="field"><label>Destaques do dia</label><textarea id="av-dest" rows="2" placeholder="O que o aluno fez no treino..."></textarea></div>
+      <div class="field"><label>Pontos a desenvolver</label><textarea id="av-mel" rows="2" placeholder="Opcional"></textarea></div>
+      <button class="btn btn--teal btn--block" id="av-save">${svg('check')} Salvar avaliação</button>`);
+    back.querySelector('#av-save').addEventListener('click', () => {
+      const exec = back.querySelector('#av-exec').value.trim();
+      const pos = back.querySelector('#av-pos').value.trim();
+      const dest = back.querySelector('#av-dest').value.trim();
+      const mel = back.querySelector('#av-mel').value.trim();
+      if (!exec && !pos && !dest && !mel) return toast('Escreva ao menos uma observação', 'info');
+      S.addAvaliacao(selectedAluno, { aula: back.querySelector('#av-aula').value, execucao: exec, posicoes: pos, destaques: dest, melhorar: mel });
+      closeModal(); toast('Avaliação registrada ✓', 'check'); render('prof-aluno');
+    });
+  }
+
+  function openMensagemModal() {
+    const a = S.getAluno(selectedAluno);
+    const back = openModal(`
+      <h3>Mensagem ao aluno</h3>
+      <div class="msub">Aparece para ${firstName(a.nome)} no "Caminho das faixas".</div>
+      <div class="field"><label>Mensagem</label><textarea id="msg-t" rows="4" placeholder="Escreva um incentivo, orientação ou meta..."></textarea></div>
+      <button class="btn btn--teal btn--block" id="msg-save">${svg('send')} Enviar</button>`);
+    back.querySelector('#msg-save').addEventListener('click', () => {
+      const t = back.querySelector('#msg-t').value.trim();
+      if (!t) return toast('Escreva a mensagem', 'info');
+      S.addMensagem(selectedAluno, t); closeModal(); toast('Mensagem enviada ✓', 'send'); render('prof-aluno');
+    });
+  }
+
+  function openPromoverModal() {
+    const a = S.getAluno(selectedAluno);
+    const beltOpts = D.BELTS.map(x => `<option value="${x.id}" ${x.id === a.belt ? 'selected' : ''}>${x.nome}</option>`).join('');
+    const grauOpts = Array.from({ length: 7 }, (_, i) => `<option value="${i}" ${i === a.graus ? 'selected' : ''}>${i} ${i === 1 ? 'grau' : 'graus'}</option>`).join('');
+    const back = openModal(`
+      <h3>Graduar aluno</h3>
+      <div class="msub">Atualize a faixa e os graus de ${firstName(a.nome)}.</div>
+      <div class="field"><label>Faixa</label><select id="pr-belt">${beltOpts}</select></div>
+      <div class="field"><label>Graus</label><select id="pr-graus">${grauOpts}</select></div>
+      <button class="btn btn--gold btn--block" id="pr-save">${svg('medal')} Confirmar graduação</button>`);
+    back.querySelector('#pr-save').addEventListener('click', () => {
+      S.promover(selectedAluno, back.querySelector('#pr-belt').value, parseInt(back.querySelector('#pr-graus').value) || 0);
+      closeModal(); toast('Graduação atualizada 🥋', 'check'); render('prof-aluno');
+    });
+  }
+
   /* ================================================================
      ROUTER
      ================================================================ */
@@ -778,26 +1029,29 @@
     inicio: viewInicio, agenda: viewAgenda, checkin: viewCheckin,
     evolucao: viewEvolucao, perfil: viewPerfil,
     tecnicas: viewTecnicas, avisos: viewAvisos, eventos: viewEventos, financeiro: viewFinanceiro,
+    prof: viewProf, 'prof-aluno': viewProfAluno,
   };
+  const PROF_ROUTES = ['prof', 'prof-aluno'];
   let currentRoute = 'inicio';
   let lastMain = 'inicio';
+  let professorUnlocked = false;
 
   function render(route) {
     const fn = VIEWS[route] || VIEWS.inicio;
     view.innerHTML = fn();
+    document.body.classList.toggle('prof-mode', PROF_ROUTES.includes(route));
     view.scrollTop = 0;
     window.scrollTo(0, 0);
   }
   function navigate(route) {
     if (!VIEWS[route]) route = 'inicio';
+    // área restrita: exige PIN
+    if (PROF_ROUTES.includes(route) && !professorUnlocked) { openProfessorGate(); return; }
     currentRoute = route;
     if (MAIN_ROUTES.includes(route)) lastMain = route;
     render(route);
     // tab active state
     tabbar.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.route === route));
-    if (route === 'checkin') {
-      // keep checkin highlighted via center; nothing else
-    }
     location.hash = route;
   }
 
@@ -813,7 +1067,7 @@
 
   // boot
   const initial = location.hash.replace('#', '');
-  navigate(VIEWS[initial] ? initial : 'inicio');
+  navigate(VIEWS[initial] && !PROF_ROUTES.includes(initial) ? initial : 'inicio');
 
   // service worker (only over http/https; ignora em file://)
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

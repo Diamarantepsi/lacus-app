@@ -88,14 +88,15 @@
   }
 
   /* ---------------- belt visual ---------------- */
+  // Ponta vermelha só na faixa preta; nas demais a ponta é preta com divisas brancas.
   function beltBar(beltId, graus) {
     const b = beltById(beltId);
-    const pills = Array.from({ length: b.graus }, (_, i) =>
-      `<i class="${i < graus ? 'on' : ''}"></i>`).join('');
+    const isBlack = beltId === 'black';
+    const stripes = Array.from({ length: graus }, () => '<i></i>').join('');
     return `
-      <div class="belt-bar ${b.cls} tip-red">
+      <div class="belt-bar ${b.cls}${isBlack ? ' tip-red' : ''}">
         <div class="belt-fill"></div>
-        <div class="belt-tip">${Array.from({length: Math.max(1, graus)}, () => '<i></i>').join('')}</div>
+        <div class="belt-tip">${stripes}</div>
       </div>`;
   }
 
@@ -167,7 +168,7 @@
           <div class="sep"></div>
           <div class="info">
             <div class="t">${next.nome}</div>
-            <div class="d">${next.prof} · ${next.dur}</div>
+            <div class="d">${[next.nivel, next.prof, next.dur].filter(Boolean).join(' · ')}</div>
           </div>
           <span class="tag ${next.tipo}">${tipoLabel(next.tipo)}</span>
         </div>` : `<div class="muted">Sem aulas próximas cadastradas.</div>`}
@@ -225,14 +226,15 @@
     <div class="stagger" id="agenda-list">${rows}</div>`;
   }
   function classRow(a) {
-    const colors = { gi: 'var(--teal)', nogi: 'var(--gold)', kids: '#a779f0', open: 'var(--green)' };
+    const colors = { fund: 'var(--teal)', pro: 'var(--gold)', open: 'var(--green)', fem: '#f06ba8' };
+    const meta = [a.nivel, a.prof].filter(Boolean).join(' · ');
     return `
     <div class="class-row" data-class='${JSON.stringify({nome:a.nome,hora:a.hora}).replace(/'/g,"&#39;")}'>
-      <span class="accent" style="background:${colors[a.tipo]}"></span>
-      <div class="ctime"><div class="h">${a.hora}</div><div class="dur">${a.dur}</div></div>
+      <span class="accent" style="background:${colors[a.tipo] || 'var(--teal)'}"></span>
+      <div class="ctime"><div class="h">${a.hora}</div>${a.dur ? `<div class="dur">${a.dur}</div>` : ''}</div>
       <div class="cinfo">
         <div class="nm">${a.nome}</div>
-        <div class="meta"><span>${a.prof}</span></div>
+        <div class="meta"><span>${meta}</span></div>
       </div>
       <span class="tag ${a.tipo}">${tipoLabel(a.tipo)}</span>
     </div>`;
@@ -574,7 +576,7 @@
   function emptyState(t, s) {
     return `<div class="empty">${svg('info')}<div style="font-family:var(--fh);font-size:16px;color:var(--txt)">${t}</div><div style="font-size:12px;margin-top:4px">${s}</div></div>`;
   }
-  function tipoLabel(t) { return { gi: 'Gi', nogi: 'No-Gi', kids: 'Kids', open: 'Open Mat' }[t] || t; }
+  function tipoLabel(t) { return { fund: 'Fund.', pro: 'Pro', open: 'Aberta', fem: 'Feminino' }[t] || t; }
   function beltDesc(id) {
     return {
       white: 'A base: sobrevivência, fugas e fundamentos.',

@@ -12,25 +12,21 @@ window.LACUS_DATA = (function () {
     { id: 'black',  nome: 'Faixa Preta',  cls: 'belt--black', dot: 'bd-black',  graus: 6 },
   ];
 
-  // Aulas por dia (0=Dom ... 6=Sáb)
+  // Grade de horários — a mesma do site da LACUS (0=Dom ... 6=Sáb)
+  // Professores ainda serão definidos pela academia (prof: '').
   const SCHEDULE = [
-    { dia: 1, hora: '06:30', dur: '60min', nome: 'Fundamentos',      tipo: 'gi',   prof: 'Prof. Rafael' },
-    { dia: 1, hora: '19:00', dur: '90min', nome: 'Gi Avançado',      tipo: 'gi',   prof: 'Prof. Rafael' },
-    { dia: 1, hora: '20:30', dur: '60min', nome: 'No-Gi',            tipo: 'nogi', prof: 'Prof. Bruno' },
-    { dia: 2, hora: '07:00', dur: '60min', nome: 'Drilling Matinal', tipo: 'gi',   prof: 'Prof. Bruno' },
-    { dia: 2, hora: '17:30', dur: '60min', nome: 'Kids & Teens',     tipo: 'kids', prof: 'Profa. Marina' },
-    { dia: 2, hora: '19:00', dur: '90min', nome: 'Gi Todos os Níveis', tipo: 'gi', prof: 'Prof. Rafael' },
-    { dia: 3, hora: '06:30', dur: '60min', nome: 'Fundamentos',      tipo: 'gi',   prof: 'Prof. Rafael' },
-    { dia: 3, hora: '19:00', dur: '90min', nome: 'Competição',       tipo: 'gi',   prof: 'Prof. Rafael' },
-    { dia: 3, hora: '20:30', dur: '60min', nome: 'No-Gi',            tipo: 'nogi', prof: 'Prof. Bruno' },
-    { dia: 4, hora: '07:00', dur: '60min', nome: 'Drilling Matinal', tipo: 'gi',   prof: 'Prof. Bruno' },
-    { dia: 4, hora: '17:30', dur: '60min', nome: 'Kids & Teens',     tipo: 'kids', prof: 'Profa. Marina' },
-    { dia: 4, hora: '19:00', dur: '90min', nome: 'Gi Avançado',      tipo: 'gi',   prof: 'Prof. Rafael' },
-    { dia: 5, hora: '06:30', dur: '60min', nome: 'Fundamentos',      tipo: 'gi',   prof: 'Prof. Rafael' },
-    { dia: 5, hora: '19:00', dur: '90min', nome: 'Gi Todos os Níveis', tipo: 'gi', prof: 'Prof. Bruno' },
-    { dia: 5, hora: '20:30', dur: '90min', nome: 'Open Mat',         tipo: 'open', prof: 'Livre' },
-    { dia: 6, hora: '09:00', dur: '90min', nome: 'Open Mat',         tipo: 'open', prof: 'Livre' },
-    { dia: 6, hora: '10:30', dur: '60min', nome: 'No-Gi',            tipo: 'nogi', prof: 'Prof. Bruno' },
+    // Segunda, Quarta e Sexta
+    { dia: 1, hora: '19:00', dur: '1h30', nome: 'Fundamentos',     tipo: 'fund', nivel: 'Iniciantes', prof: '' },
+    { dia: 1, hora: '20:30', dur: '1h30', nome: 'Performance Pro', tipo: 'pro',  nivel: 'Avançados',  prof: '' },
+    { dia: 3, hora: '19:00', dur: '1h30', nome: 'Fundamentos',     tipo: 'fund', nivel: 'Iniciantes', prof: '' },
+    { dia: 3, hora: '20:30', dur: '1h30', nome: 'Performance Pro', tipo: 'pro',  nivel: 'Avançados',  prof: '' },
+    { dia: 5, hora: '19:00', dur: '1h30', nome: 'Fundamentos',     tipo: 'fund', nivel: 'Iniciantes', prof: '' },
+    { dia: 5, hora: '20:30', dur: '1h30', nome: 'Performance Pro', tipo: 'pro',  nivel: 'Avançados',  prof: '' },
+    // Terça e Quinta
+    { dia: 2, hora: '08:30', dur: '2h30', nome: 'Aula Aberta',     tipo: 'open', nivel: 'Aberto',     prof: '' },
+    { dia: 4, hora: '08:30', dur: '2h30', nome: 'Aula Aberta',     tipo: 'open', nivel: 'Aberto',     prof: '' },
+    // Sábado
+    { dia: 6, hora: '15:00', dur: '',     nome: 'Lacus Feminino',  tipo: 'fem',  nivel: 'Feminino',   prof: '' },
   ];
 
   // Biblioteca de técnicas (currículo)

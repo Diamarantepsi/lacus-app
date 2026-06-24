@@ -30,6 +30,7 @@ window.LACUS_STORE = (function () {
   const DEFAULT = {
     perfil: {
       nome: 'Atleta LACUS',
+      categoria: 'adulto',   // 'adulto' | 'kids' (infantojuvenil)
       belt: 'blue',
       graus: 2,
       academia: 'LACUS Jiu-Jitsu — Maceió/AL',

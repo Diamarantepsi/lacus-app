@@ -93,18 +93,47 @@
     setTimeout(() => (modalRoot.innerHTML = ''), 280);
   }
 
-  /* ---------------- belt visual ---------------- */
-  // Ponta vermelha só na faixa preta; nas demais a ponta é preta com divisas brancas.
+  /* ---------------- belt visual (orientado a dados) ---------------- */
+  function beltGradient(c) { return `linear-gradient(180deg, ${c} 0%, ${c} 52%, rgba(0,0,0,0.22) 100%)`; }
+  function beltDot(b) {
+    return `<span class="belt-dot" style="background:${b.color};box-shadow:inset 0 0 0 1px rgba(255,255,255,0.22)"></span>`;
+  }
+  // Ponta vermelha só na faixa preta; faixas infantis têm barra central (branca/preta).
   function beltBar(beltId, graus) {
     const b = beltById(beltId);
     const isBlack = beltId === 'black';
     const stripes = Array.from({ length: graus }, () => '<i></i>').join('');
+    const fill = `background:${beltGradient(b.color)}`;
+    const mid = b.bar ? `<span class="belt-mid" style="background:${b.bar === 'white' ? '#f2efe9' : '#0c0c0c'}"></span>` : '';
+    const tip = isBlack ? 'background:linear-gradient(180deg,#b3221b,#7e120c)' : '';
     return `
-      <div class="belt-bar ${b.cls}${isBlack ? ' tip-red' : ''}">
-        <div class="belt-fill"></div>
-        <div class="belt-tip">${stripes}</div>
-        <div class="belt-end"></div>
+      <div class="belt-bar">
+        <div class="belt-fill" style="${fill}">${mid}</div>
+        <div class="belt-tip" style="${tip}">${stripes}</div>
+        <div class="belt-end" style="${fill}">${mid}</div>
       </div>`;
+  }
+
+  /* ---------------- trilhas de graduação ---------------- */
+  function ladderFor(beltId, categoria) {
+    if (beltId === 'white') return categoria === 'kids' ? D.BELTS_KIDS : D.BELTS_ADULT;
+    const inKids = D.BELTS_KIDS.some(b => b.id === beltId);
+    const inAdult = D.BELTS_ADULT.some(b => b.id === beltId);
+    if (inKids && !inAdult) return D.BELTS_KIDS;
+    return D.BELTS_ADULT;
+  }
+  function deriveCategoria(beltId, fallback) {
+    if (beltId === 'white') return fallback || 'adulto';
+    return D.BELTS_KIDS.some(b => b.id === beltId) ? 'kids' : 'adulto';
+  }
+  function beltOptionsGrouped(sel) {
+    const opt = b => `<option value="${b.id}" ${b.id === sel ? 'selected' : ''}>${b.nome}</option>`;
+    return `<optgroup label="Adulto (16+)">${D.BELTS_ADULT.map(opt).join('')}</optgroup>
+            <optgroup label="Infantojuvenil (4–15 anos)">${D.BELTS_KIDS.filter(b => b.id !== 'white').map(opt).join('')}</optgroup>`;
+  }
+  function grausOptions(beltId, sel) {
+    const max = (beltById(beltId) || { graus: 4 }).graus;
+    return Array.from({ length: max + 1 }, (_, i) => `<option value="${i}" ${i === sel ? 'selected' : ''}>${i} ${i === 1 ? 'grau' : 'graus'}</option>`).join('');
   }
 
   /* ================================================================
@@ -338,27 +367,31 @@
      ================================================================ */
   function viewEvolucao() {
     const p = S.state.perfil;
-    const curIdx = beltIndex(p.belt);
+    const categoria = p.categoria || deriveCategoria(p.belt, 'adulto');
+    const ladder = ladderFor(p.belt, categoria);
+    const curIdx = ladder.findIndex(b => b.id === p.belt);
     const counts = S.monthlyCounts();
     const maxC = Math.max(1, ...counts.map(c => c.count));
 
-    const journey = D.BELTS.map((b, idx) => {
+    const journey = ladder.map((b, idx) => {
       let stateCls = 'upcoming';
       if (idx < curIdx) stateCls = 'done';
       else if (idx === curIdx) stateCls = 'current';
       const badge = idx === curIdx
         ? `<span class="badge cur">Atual · ${p.graus} ${p.graus === 1 ? 'grau' : 'graus'}</span>`
-        : idx < curIdx ? `<span class="badge dn">Conquistada</span>` : '';
+        : idx < curIdx ? `<span class="badge dn">Conquistada</span>`
+        : `<span class="jidade">${b.idade}</span>`;
       return `
       <div class="jstep ${stateCls}">
-        <div class="rail"><div class="node"></div><div class="line"></div></div>
+        <div class="rail"><div class="node" style="${idx < curIdx ? `background:${b.color};border-color:${b.color}` : ''}"></div><div class="line"></div></div>
         <div class="jbody">
-          <div class="bn">${b.nome.replace('Faixa ', '')}</div>
+          <div class="bn">${b.short || b.nome.replace('Faixa ', '')}</div>
           <div class="bd">${beltDesc(b.id)}</div>
           ${badge}
         </div>
       </div>`;
     }).join('');
+    const trilhaLabel = categoria === 'kids' ? 'Trilha infantojuvenil' : 'Trilha adulta';
 
     const chart = counts.map(c => {
       const h = Math.round((c.count / maxC) * 100);
@@ -419,7 +452,7 @@
       ${avCard}
 
       <div class="card">
-        <div class="card-head"><span class="section-title">Caminho das faixas</span></div>
+        <div class="card-head"><span class="section-title">Caminho das faixas</span><span class="see-all">${trilhaLabel}</span></div>
         <div class="journey">${journey}</div>
       </div>
     </div>`;
@@ -478,7 +511,7 @@
         <div class="tnum">${String(i + 1).padStart(2, '0')}</div>
         <div class="tinfo">
           <div class="nm">${t.nome}</div>
-          <div class="meta"><span class="belt-dot ${b.dot}"></span><span class="pos">${t.pos} · ${b.nome.replace('Faixa ','')}</span></div>
+          <div class="meta">${beltDot(b)}<span class="pos">${t.pos} · ${b.short || b.nome.replace('Faixa ','')}</span></div>
         </div>
         <div class="check">${svg('check')}</div>
       </div>`;
@@ -639,7 +672,7 @@
       <div class="prow-av">${initials(a.nome)}</div>
       <div class="prow-info">
         <div class="nm">${a.nome}${isMe ? ' <span class="me-chip">você</span>' : ''}</div>
-        <div class="meta"><span class="belt-dot ${b.dot}"></span>${b.nome.replace('Faixa ', '')} · ${a.graus} ${a.graus === 1 ? 'grau' : 'graus'}</div>
+        <div class="meta">${beltDot(b)}${b.short || b.nome.replace('Faixa ', '')} · ${a.graus} ${a.graus === 1 ? 'grau' : 'graus'}</div>
         <div class="last">${lastTxt}${nMsg ? ' · ' + nMsg + ' msg' : ''}</div>
       </div>
       <span class="chev">${svg('chevron')}</span>
@@ -714,13 +747,19 @@
   }
   function tipoLabel(t) { return { fund: 'Fund.', pro: 'Pro', open: 'Aberta', fem: 'Feminino' }[t] || t; }
   function beltDesc(id) {
-    return {
+    const map = {
       white: 'A base: sobrevivência, fugas e fundamentos.',
       blue: 'Repertório técnico em expansão. Defesa sólida.',
       purple: 'Jogo pessoal, criatividade e transições.',
       brown: 'Refinamento, pressão e tempo de jogo.',
       black: 'Maestria. A arte vira instinto.',
-    }[id] || '';
+    };
+    if (map[id]) return map[id];
+    if (id.indexOf('gray') === 0) return 'Faixa cinza — coordenação, disciplina e os primeiros fundamentos.';
+    if (id.indexOf('yellow') === 0) return 'Faixa amarela — técnica, controle postural e autoconfiança.';
+    if (id.indexOf('orange') === 0) return 'Faixa laranja — repertório, tática e leitura de jogo.';
+    if (id.indexOf('green') === 0) return 'Faixa verde — base avançada e preparação para o adulto.';
+    return '';
   }
   function firstName(n) { return (n || '').trim().split(' ')[0] || 'Atleta'; }
   function initials(n) {
@@ -878,20 +917,31 @@
   /* ---- edit profile ---- */
   function openEditModal() {
     const p = S.state.perfil;
-    const beltOpts = D.BELTS.map(b => `<option value="${b.id}" ${b.id === p.belt ? 'selected' : ''}>${b.nome}</option>`).join('');
-    const grauOpts = Array.from({ length: 7 }, (_, i) => `<option value="${i}" ${i === p.graus ? 'selected' : ''}>${i} ${i === 1 ? 'grau' : 'graus'}</option>`).join('');
+    const cat = p.categoria || deriveCategoria(p.belt, 'adulto');
     const back = openModal(`
       <h3>Editar perfil</h3>
       <div class="msub">Personalize seus dados</div>
       <div class="field"><label>Nome</label><input id="f-nome" type="text" value="${p.nome}" maxlength="40" /></div>
-      <div class="field"><label>Faixa</label><select id="f-belt">${beltOpts}</select></div>
-      <div class="field"><label>Graus</label><select id="f-graus">${grauOpts}</select></div>
+      <div class="field"><label>Categoria</label><select id="f-cat">
+        <option value="adulto" ${cat === 'adulto' ? 'selected' : ''}>Adulto (16+)</option>
+        <option value="kids" ${cat === 'kids' ? 'selected' : ''}>Infantojuvenil (4–15 anos)</option>
+      </select></div>
+      <div class="field"><label>Faixa</label><select id="f-belt">${beltOptionsGrouped(p.belt)}</select></div>
+      <div class="field"><label>Graus</label><select id="f-graus">${grausOptions(p.belt, p.graus)}</select></div>
       <div class="field"><label>Meta de treinos / mês</label><input id="f-meta" type="number" min="1" max="40" value="${p.metaMensal}" /></div>
       <button class="btn btn--teal btn--block" id="f-save">${svg('check')} Salvar</button>`);
+    // ao trocar a faixa, atualiza as opções de grau e a categoria
+    back.querySelector('#f-belt').addEventListener('change', e => {
+      const id = e.target.value;
+      back.querySelector('#f-graus').innerHTML = grausOptions(id, 0);
+      if (id !== 'white') back.querySelector('#f-cat').value = deriveCategoria(id);
+    });
     back.querySelector('#f-save').addEventListener('click', () => {
+      const belt = back.querySelector('#f-belt').value;
       S.updatePerfil({
         nome: back.querySelector('#f-nome').value.trim() || 'Atleta LACUS',
-        belt: back.querySelector('#f-belt').value,
+        categoria: deriveCategoria(belt, back.querySelector('#f-cat').value),
+        belt: belt,
         graus: parseInt(back.querySelector('#f-graus').value) || 0,
         metaMensal: Math.max(1, parseInt(back.querySelector('#f-meta').value) || 16),
       });
@@ -952,15 +1002,16 @@
   }
 
   function openAddAlunoModal() {
-    const beltOpts = D.BELTS.map(x => `<option value="${x.id}">${x.nome}</option>`).join('');
-    const grauOpts = Array.from({ length: 7 }, (_, i) => `<option value="${i}">${i} ${i === 1 ? 'grau' : 'graus'}</option>`).join('');
     const back = openModal(`
       <h3>Adicionar aluno</h3>
       <div class="msub">Cadastre um novo aluno na turma.</div>
       <div class="field"><label>Nome</label><input id="al-nome" type="text" maxlength="40" placeholder="Nome do aluno"/></div>
-      <div class="field"><label>Faixa</label><select id="al-belt">${beltOpts}</select></div>
-      <div class="field"><label>Graus</label><select id="al-graus">${grauOpts}</select></div>
+      <div class="field"><label>Faixa</label><select id="al-belt">${beltOptionsGrouped('white')}</select></div>
+      <div class="field"><label>Graus</label><select id="al-graus">${grausOptions('white', 0)}</select></div>
       <button class="btn btn--gold btn--block" id="al-save">${svg('plus')} Adicionar</button>`);
+    back.querySelector('#al-belt').addEventListener('change', e => {
+      back.querySelector('#al-graus').innerHTML = grausOptions(e.target.value, 0);
+    });
     back.querySelector('#al-save').addEventListener('click', () => {
       const nome = back.querySelector('#al-nome').value.trim();
       if (!nome) return toast('Informe o nome', 'info');
@@ -1008,16 +1059,20 @@
 
   function openPromoverModal() {
     const a = S.getAluno(selectedAluno);
-    const beltOpts = D.BELTS.map(x => `<option value="${x.id}" ${x.id === a.belt ? 'selected' : ''}>${x.nome}</option>`).join('');
-    const grauOpts = Array.from({ length: 7 }, (_, i) => `<option value="${i}" ${i === a.graus ? 'selected' : ''}>${i} ${i === 1 ? 'grau' : 'graus'}</option>`).join('');
     const back = openModal(`
       <h3>Graduar aluno</h3>
       <div class="msub">Atualize a faixa e os graus de ${firstName(a.nome)}.</div>
-      <div class="field"><label>Faixa</label><select id="pr-belt">${beltOpts}</select></div>
-      <div class="field"><label>Graus</label><select id="pr-graus">${grauOpts}</select></div>
+      <div class="field"><label>Faixa</label><select id="pr-belt">${beltOptionsGrouped(a.belt)}</select></div>
+      <div class="field"><label>Graus</label><select id="pr-graus">${grausOptions(a.belt, a.graus)}</select></div>
       <button class="btn btn--gold btn--block" id="pr-save">${svg('medal')} Confirmar graduação</button>`);
+    back.querySelector('#pr-belt').addEventListener('change', e => {
+      back.querySelector('#pr-graus').innerHTML = grausOptions(e.target.value, 0);
+    });
     back.querySelector('#pr-save').addEventListener('click', () => {
-      S.promover(selectedAluno, back.querySelector('#pr-belt').value, parseInt(back.querySelector('#pr-graus').value) || 0);
+      const belt = back.querySelector('#pr-belt').value;
+      const graus = parseInt(back.querySelector('#pr-graus').value) || 0;
+      S.promover(selectedAluno, belt, graus);
+      if (selectedAluno === 'me') S.updatePerfil({ categoria: deriveCategoria(belt, S.state.perfil.categoria) });
       closeModal(); toast('Graduação atualizada 🥋', 'check'); render('prof-aluno');
     });
   }

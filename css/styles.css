@@ -184,10 +184,12 @@ h1, h2, h3 { font-family: var(--fh); font-weight: 600; letter-spacing: 0.01em; l
 
 /* Visual belt bar — cor da faixa, ponta preta com divisas, e um trecho de cor no fim */
 .belt-bar { height: 26px; border-radius: 6px; display: flex; overflow: hidden; position: relative; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 6px 18px -10px #000; }
-.belt-bar .belt-fill { flex: 1; }
+.belt-bar .belt-fill { flex: 1; position: relative; overflow: hidden; }
 .belt-bar .belt-tip { width: 54px; flex-shrink: 0; background: #0c0c0c; position: relative; display: flex; align-items: center; gap: 4px; padding-left: 8px; }
 .belt-bar .belt-tip i { width: 5px; height: 100%; background: #fff; opacity: 0.92; }
-.belt-bar .belt-end { width: 15px; flex-shrink: 0; }
+.belt-bar .belt-end { width: 15px; flex-shrink: 0; position: relative; overflow: hidden; }
+/* barra central das faixas infantis (cinza/amarela/laranja/verde — e-Branca / e-Preta) */
+.belt-mid { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); height: 8px; box-shadow: 0 0 0 0.5px rgba(0,0,0,0.15); }
 .belt-bar.tip-red .belt-tip { background: linear-gradient(180deg, #b3221b, #7e120c); }
 .belt--white .belt-fill, .belt--white .belt-end { background: linear-gradient(180deg, #f3f0ea, #d8d3ca); }
 .belt--blue .belt-fill, .belt--blue .belt-end { background: linear-gradient(180deg, #2f6ff0, #1d4fd0); }
@@ -359,6 +361,7 @@ h1, h2, h3 { font-family: var(--fh); font-weight: 600; letter-spacing: 0.01em; l
 .jstep .jbody .badge { display: inline-block; margin-top: 6px; font-family: var(--fm); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border-radius: var(--r-pill); }
 .badge.cur { background: rgba(232,160,32,0.14); color: var(--gold2); }
 .badge.dn { background: rgba(111,213,231,0.12); color: var(--teal); }
+.jstep .jbody .jidade { display: inline-block; margin-top: 6px; font-family: var(--fm); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
 
 /* bar chart */
 .chart { display: flex; align-items: flex-end; gap: 9px; height: 132px; padding-top: 10px; }

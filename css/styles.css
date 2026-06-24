@@ -610,6 +610,35 @@ h1, h2, h3 { font-family: var(--fh); font-weight: 600; letter-spacing: 0.01em; l
 body.prof-mode .tabbar { display: none; }
 body.prof-mode .view { padding-bottom: calc(env(safe-area-inset-bottom) + 30px); }
 
+/* ---------- Login / cadastro (nuvem) ---------- */
+body.auth-mode .tabbar { display: none; }
+.auth-wrap { max-width: 380px; margin: 0 auto; padding-top: calc(env(safe-area-inset-top) + 16px); }
+.auth-top { margin-bottom: 6px; }
+.auth-logo { display: grid; place-items: center; margin: 8px auto 16px; }
+.auth-h { font-family: var(--fh); font-size: 30px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; text-align: center; }
+.auth-sub { color: var(--muted); text-align: center; margin: 7px 0 22px; font-size: 13px; line-height: 1.5; }
+.auth-welcome { text-align: center; padding-top: 36px; }
+.auth-welcome .wordmark { font-family: var(--fh); font-weight: 600; text-transform: uppercase; margin-top: 6px; }
+.auth-tag { font-family: var(--fm); font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold2); margin: 8px 0 16px; }
+.auth-alt { text-align: center; margin-top: 18px; color: var(--muted); font-size: 13px; }
+.auth-note { display: flex; gap: 10px; align-items: flex-start; background: rgba(232,160,32,0.08); border: 1px solid rgba(232,160,32,0.22); border-radius: var(--r); padding: 12px 14px; margin-bottom: 16px; font-size: 12.5px; color: var(--gold2); line-height: 1.5; }
+.auth-note svg { width: 18px; height: 18px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 2; }
+.role-row { display: flex; flex-direction: column; gap: 9px; margin-bottom: 10px; }
+.role-chip { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: var(--r); background: rgba(255,255,255,0.03); border: 1px solid var(--border); text-align: left; transition: 0.2s; }
+.role-chip svg { width: 22px; height: 22px; stroke: var(--muted); fill: none; stroke-width: 1.8; }
+.role-chip span { font-family: var(--fh); font-size: 15px; }
+.role-chip.on { border-color: var(--teal); background: rgba(111,213,231,0.08); }
+.role-chip.on svg { stroke: var(--teal); }
+.role-note { font-size: 12px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+
+/* menu do professor (nuvem) */
+.pm-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 14px; scrollbar-width: none; margin: 0 calc(var(--pad) * -1); padding-left: var(--pad); padding-right: var(--pad); }
+.pm-row::-webkit-scrollbar { display: none; }
+.pm-chip { flex-shrink: 0; padding: 9px 15px; border-radius: var(--r-pill); font-family: var(--fm); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); background: rgba(255,255,255,0.03); border: 1px solid var(--border); transition: 0.2s; }
+.pm-chip.on { background: linear-gradient(120deg, var(--gold2), var(--gold)); color: #1c1203; border-color: transparent; }
+.mini-x { margin-left: auto; width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; color: var(--faint); }
+.mini-x svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2.4; fill: none; }
+
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.05ms !important; }
 }

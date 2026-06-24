@@ -1,17 +1,11 @@
 /* ============================================================
    LACUS · configuração do back-end (Supabase)
-   ------------------------------------------------------------
-   Cole aqui os dados do seu projeto Supabase:
-     - SUPABASE_URL      → Project Settings ▸ API ▸ Project URL
-     - SUPABASE_ANON_KEY → Project Settings ▸ API ▸ Project API keys ▸ "anon public"
-   A chave "anon public" PODE ficar no código — ela é protegida pelas
+   A chave "anon public" PODE ficar no código — é protegida pelas
    regras de segurança (RLS) do banco. NUNCA cole aqui a "service_role"
    nem a senha do banco.
-
-   Enquanto estes campos estiverem vazios, o app funciona em MODO LOCAL
-   (dados só neste aparelho), exatamente como antes.
+   Com estes campos preenchidos, o app usa contas/login reais na nuvem.
    ============================================================ */
 window.LACUS_CONFIG = {
-  SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: '',
+  SUPABASE_URL: 'https://rjxpirkiuqfywaosbyrv.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqeHBpcmtpdXFmeXdhb3NieXJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMjI0MjAsImV4cCI6MjA5Nzg5ODQyMH0.vWWnADZd17AXAami09HlgQ3F78fp3hrovurUrtROm9o',
 };

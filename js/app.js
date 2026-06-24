@@ -367,6 +367,7 @@
      ================================================================ */
   function viewEvolucao() {
     const p = S.state.perfil;
+    const b = beltById(p.belt);
     const categoria = p.categoria || deriveCategoria(p.belt, 'adulto');
     const ladder = ladderFor(p.belt, categoria);
     const curIdx = ladder.findIndex(b => b.id === p.belt);
@@ -431,11 +432,15 @@
           </div>`).join('')}
       </div>` : '';
 
+    const readOnly = CLOUD && SESSION.readOnly;
+    const head = readOnly
+      ? `<div class="prof-top"><button class="icon-btn" data-go="responsavel">${svg('arrowLeft')}</button>
+           <span class="prof-badge">${svg('users')} ${firstName(p.nome)}</span><span style="width:42px"></span></div>
+         <div class="phead"><span class="eyebrow">Acompanhamento</span><h1 class="page-title">Evolução</h1>
+           <p>${b.nome} · ${p.graus} ${p.graus === 1 ? 'grau' : 'graus'}</p></div>`
+      : `<div class="phead"><span class="eyebrow">Sua jornada</span><h1 class="page-title">Evolução</h1></div>`;
     return `
-    <div class="phead">
-      <span class="eyebrow">Sua jornada</span>
-      <h1 class="page-title">Evolução</h1>
-    </div>
+    ${head}
 
     <div class="stagger">
       <div class="card">
@@ -553,37 +558,41 @@
       </button>
       <button class="list-item" data-go="avisos">
         <div class="lic">${svg('mega')}</div>
-        <div class="lt"><div class="a">Avisos da academia</div><div class="b">${D.AVISOS.length} novos</div></div>
+        <div class="lt"><div class="a">Avisos da academia</div><div class="b">${(CLOUD ? CLOUD_AVISOS.length : D.AVISOS.length)} ${CLOUD ? 'publicados' : 'novos'}</div></div>
         <span class="chev">${svg('chevron')}</span>
       </button>
       <button class="list-item" data-go="eventos">
         <div class="lic">${svg('trophy')}</div>
-        <div class="lt"><div class="a">Eventos & competições</div><div class="b">${D.EVENTOS.length} próximos</div></div>
+        <div class="lt"><div class="a">Eventos & competições</div><div class="b">${(CLOUD ? CLOUD_EVENTOS.length : D.EVENTOS.length)} próximos</div></div>
         <span class="chev">${svg('chevron')}</span>
       </button>
     </div>
 
-    <div class="divider-label"><span class="section-title">Equipe</span></div>
+    ${CLOUD ? '' : `<div class="divider-label"><span class="section-title">Equipe</span></div>
     <div class="card list-card stagger">
       <button class="list-item" data-action="professor">
         <div class="lic" style="color:var(--gold2);background:rgba(232,160,32,0.10)">${svg('lock')}</div>
         <div class="lt"><div class="a">Área do Professor</div><div class="b">Acesso restrito · avaliar alunos e enviar feedback</div></div>
         <span class="chev">${svg('chevron')}</span>
       </button>
-    </div>
+    </div>`}
 
     <div class="divider-label"><span class="section-title">App</span></div>
     <div class="card list-card stagger">
       <button class="list-item" data-action="compartilhar">
         <div class="lic">${svg('share')}</div>
-        <div class="lt"><div class="a">Compartilhar app</div><div class="b">Envie o link para um amigo testar</div></div>
+        <div class="lt"><div class="a">Compartilhar app</div><div class="b">Envie o link para um amigo</div></div>
         <span class="chev">${svg('chevron')}</span>
       </button>
-      <button class="list-item" data-action="reset">
+      ${CLOUD ? `<button class="list-item" data-action="logout">
+        <div class="lic" style="color:var(--danger)">${svg('x')}</div>
+        <div class="lt"><div class="a">Sair da conta</div><div class="b">${SESSION.user ? SESSION.user.email : ''}</div></div>
+        <span class="chev">${svg('chevron')}</span>
+      </button>` : `<button class="list-item" data-action="reset">
         <div class="lic" style="color:var(--danger)">${svg('refresh')}</div>
         <div class="lt"><div class="a">Redefinir dados</div><div class="b">Voltar ao estado inicial</div></div>
         <span class="chev">${svg('chevron')}</span>
-      </button>
+      </button>`}
     </div>
 
     <div class="empty stagger" style="padding-top:26px">
@@ -597,17 +606,19 @@
      SUB-VIEWS: avisos / eventos / financeiro
      ================================================================ */
   function viewAvisos() {
+    const list = CLOUD ? CLOUD_AVISOS.map(a => ({ tipo: 'aviso', titulo: a.titulo, texto: a.texto || '', data: (a.data || '').slice(0, 10) })) : D.AVISOS;
     return `
     ${subHeader('Comunicados', 'Avisos', 'Direto da recepção LACUS')}
     <div class="card stagger">
-      ${D.AVISOS.map(noticeRow).join('')}
+      ${list.length ? list.map(noticeRow).join('') : emptyState('Sem avisos', 'Quando o professor publicar, aparece aqui.')}
     </div>`;
   }
   function viewEventos() {
+    const list = CLOUD ? CLOUD_EVENTOS.map(a => ({ tipo: 'evento', titulo: a.titulo, texto: a.texto || '', data: (a.data || '').slice(0, 10) })) : D.EVENTOS;
     return `
     ${subHeader('Calendário', 'Eventos', 'Competições e seminários')}
     <div class="card stagger">
-      ${D.EVENTOS.map(noticeRow).join('')}
+      ${list.length ? list.map(noticeRow).join('') : emptyState('Sem eventos', 'Quando o professor publicar, aparece aqui.')}
     </div>`;
   }
   function noticeRow(n) {
@@ -646,11 +657,12 @@
 
   function viewProf() {
     const alunos = S.getAlunos();
+    const topo = CLOUD
+      ? `${profTopBar()}${profMenu('prof')}`
+      : `<div class="prof-top"><span class="prof-badge">${svg('lock')} Modo Professor</span>
+           <button class="icon-btn" data-action="prof-exit" aria-label="Sair do modo professor">${svg('x')}</button></div>`;
     return `
-    <div class="prof-top">
-      <span class="prof-badge">${svg('lock')} Modo Professor</span>
-      <button class="icon-btn" data-action="prof-exit" aria-label="Sair do modo professor">${svg('x')}</button>
-    </div>
+    ${topo}
     <div class="phead">
       <span class="eyebrow">Turma LACUS</span>
       <h1 class="page-title">Alunos</h1>
@@ -658,7 +670,7 @@
     </div>
     <button class="btn btn--gold btn--block" data-action="add-aluno">${svg('plus')} Adicionar aluno</button>
     <div class="spacer"></div>
-    <div class="stagger">${alunos.map(profAlunoRow).join('')}</div>`;
+    <div class="stagger">${alunos.length ? alunos.map(profAlunoRow).join('') : emptyState('Nenhum aluno ainda', 'Adicione alunos ou aprove solicitações de acesso.')}</div>`;
   }
 
   function profAlunoRow(a) {
@@ -803,6 +815,30 @@
      INTERACTIONS (event delegation on #view)
      ================================================================ */
   view.addEventListener('click', e => {
+    // --- telas de acesso / nuvem ---
+    const authNav = e.target.closest('[data-auth]');
+    if (authNav) { showAuth(authNav.dataset.auth); return; }
+    const authDo = e.target.closest('[data-authdo]');
+    if (authDo) {
+      const a = authDo.dataset.authdo;
+      if (a === 'sendreq') sendRequest(authDo.dataset.tipo); else handleAuth(a);
+      return;
+    }
+    const roleChip = e.target.closest('[data-role]');
+    if (roleChip) { authReg.role = roleChip.dataset.role; showAuth('register'); return; }
+    const child = e.target.closest('[data-child]');
+    if (child) { openChild(child.dataset.child); return; }
+    const appr = e.target.closest('[data-approve]');
+    if (appr) { approveRequest(appr.dataset.approve); return; }
+    const rej = e.target.closest('[data-reject]');
+    if (rej) { rejectRequest(rej.dataset.reject); return; }
+    const fin = e.target.closest('[data-fin]');
+    if (fin) { toggleFinanceiro(fin.dataset.fin); return; }
+    const dav = e.target.closest('[data-del-aviso]');
+    if (dav) { delAviso(dav.dataset.delAviso); return; }
+    const dev = e.target.closest('[data-del-evento]');
+    if (dev) { delEvento(dev.dataset.delEvento); return; }
+
     const go = e.target.closest('[data-go]');
     if (go) { navigate(go.dataset.go); return; }
     const back = e.target.closest('[data-back]');
@@ -818,7 +854,11 @@
 
     // professor: abrir aluno
     const al = e.target.closest('[data-aluno]');
-    if (al) { selectedAluno = al.dataset.aluno; navigate('prof-aluno'); return; }
+    if (al) {
+      selectedAluno = al.dataset.aluno;
+      if (CLOUD) openStudentCloud(al.dataset.aluno); else navigate('prof-aluno');
+      return;
+    }
     const bp = e.target.closest('[data-back-prof]');
     if (bp) { navigate('prof'); return; }
 
@@ -868,6 +908,9 @@
     if (a === 'nova-avaliacao') return openAvaliacaoModal();
     if (a === 'nova-mensagem') return openMensagemModal();
     if (a === 'promover') return openPromoverModal();
+    if (a === 'novo-aviso') return openAvisoModal();
+    if (a === 'novo-evento') return openEventoModal();
+    if (a === 'logout') return handleAuth('logout');
   }
 
   /* ---- check-in flows ---- */
@@ -907,7 +950,18 @@
     back.querySelector('#confirm-ck').addEventListener('click', () => doCheckin(nome, hora));
     back.querySelector('#cancel-ck').addEventListener('click', closeModal);
   }
-  function doCheckin(nome, hora) {
+  async function doCheckin(nome, hora) {
+    if (CLOUD) {
+      if (SESSION.readOnly || !SESSION.studentId) { closeModal(); return; }
+      try {
+        const r = await API.checkins.add(SESSION.studentId, nome, hora);
+        if (r === null) { closeModal(); toast('Você já registrou hoje 💪', 'check'); return; }
+        S.state.checkins.unshift({ date: r.data, aula: r.aula, hora: r.hora });
+      } catch (e) { closeModal(); toast(authError(e), 'info'); return; }
+      closeModal(); toast('Check-in registrado! 🔥 Bom treino!', 'check');
+      if (currentRoute === 'checkin' || currentRoute === 'inicio') render(currentRoute);
+      return;
+    }
     S.addCheckin(nome, hora);
     closeModal();
     toast('Check-in registrado! 🔥 Bom treino!', 'check');
@@ -917,6 +971,25 @@
   /* ---- edit profile ---- */
   function openEditModal() {
     const p = S.state.perfil;
+    if (CLOUD) {
+      // aluno na nuvem: edita o próprio nome e a meta; faixa/graus são do professor
+      const back2 = openModal(`
+        <h3>Editar perfil</h3>
+        <div class="msub">Sua faixa e graus são definidos pelo professor.</div>
+        <div class="field"><label>Nome</label><input id="f-nome" type="text" value="${p.nome}" maxlength="60" /></div>
+        <div class="field"><label>Meta de treinos / mês</label><input id="f-meta" type="number" min="1" max="40" value="${p.metaMensal}" /></div>
+        <button class="btn btn--teal btn--block" id="f-save">${svg('check')} Salvar</button>`);
+      back2.querySelector('#f-save').addEventListener('click', async () => {
+        const nome = back2.querySelector('#f-nome').value.trim() || p.nome;
+        p.metaMensal = Math.max(1, parseInt(back2.querySelector('#f-meta').value) || 16);
+        try {
+          if (SESSION.studentId) await API.students.update(SESSION.studentId, { nome });
+          p.nome = nome;
+          closeModal(); toast('Perfil atualizado ✓', 'check'); render('perfil');
+        } catch (e) { toast(authError(e), 'info'); }
+      });
+      return;
+    }
     const cat = p.categoria || deriveCategoria(p.belt, 'adulto');
     const back = openModal(`
       <h3>Editar perfil</h3>
@@ -1004,18 +1077,44 @@
   function openAddAlunoModal() {
     const back = openModal(`
       <h3>Adicionar aluno</h3>
-      <div class="msub">Cadastre um novo aluno na turma.</div>
-      <div class="field"><label>Nome</label><input id="al-nome" type="text" maxlength="40" placeholder="Nome do aluno"/></div>
+      <div class="msub">Ficha do aluno. Campos com * são essenciais.</div>
+      <div class="field"><label>Nome completo *</label><input id="al-nome" type="text" maxlength="60" placeholder="Nome do aluno"/></div>
+      <div class="field"><label>Data de nascimento</label><input id="al-nasc" type="date"/></div>
       <div class="field"><label>Faixa</label><select id="al-belt">${beltOptionsGrouped('white')}</select></div>
       <div class="field"><label>Graus</label><select id="al-graus">${grausOptions('white', 0)}</select></div>
-      <button class="btn btn--gold btn--block" id="al-save">${svg('plus')} Adicionar</button>`);
+      <div class="field"><label>Telefone / WhatsApp</label><input id="al-fone" type="tel" inputmode="tel" placeholder="(82) 99999-0000"/></div>
+      <div class="field"><label>E-mail</label><input id="al-email" type="email" inputmode="email" placeholder="opcional"/></div>
+      <div class="field"><label>Contato de emergência</label><input id="al-emerg" type="text" placeholder="Nome e telefone"/></div>
+      <div class="field"><label>Condições médicas / lesões</label><textarea id="al-med" rows="2" placeholder="Opcional"></textarea></div>
+      <div class="field"><label>Dia de vencimento da mensalidade</label><input id="al-venc" type="number" min="1" max="31" placeholder="ex.: 10"/></div>
+      <div class="field"><label>Responsável (se menor)</label><input id="al-resp" type="text" placeholder="Nome do responsável — opcional"/></div>
+      <button class="btn btn--gold btn--block" id="al-save">${svg('plus')} Adicionar aluno</button>`);
     back.querySelector('#al-belt').addEventListener('change', e => {
       back.querySelector('#al-graus').innerHTML = grausOptions(e.target.value, 0);
     });
-    back.querySelector('#al-save').addEventListener('click', () => {
+    back.querySelector('#al-save').addEventListener('click', async () => {
       const nome = back.querySelector('#al-nome').value.trim();
       if (!nome) return toast('Informe o nome', 'info');
-      S.addAluno(nome, back.querySelector('#al-belt').value, parseInt(back.querySelector('#al-graus').value) || 0);
+      const belt = back.querySelector('#al-belt').value;
+      const graus = parseInt(back.querySelector('#al-graus').value) || 0;
+      const nasc = back.querySelector('#al-nasc').value || null;
+      const venc = parseInt(back.querySelector('#al-venc').value) || null;
+      const resp = back.querySelector('#al-resp').value.trim();
+      if (CLOUD) {
+        const emerg = back.querySelector('#al-emerg').value.trim();
+        const payload = {
+          professor_id: SESSION.user.id, nome, belt, graus,
+          categoria: deriveCategoria(belt, idade(nasc) != null && idade(nasc) < 16 ? 'kids' : 'adulto'),
+          data_nascimento: nasc, telefone: back.querySelector('#al-fone').value.trim() || null,
+          email: back.querySelector('#al-email').value.trim() || null,
+          contato_emergencia_nome: emerg || null, cond_medicas: back.querySelector('#al-med').value.trim() || null,
+          vencimento_dia: venc, observacoes: resp ? ('Responsável: ' + resp) : null,
+        };
+        try { await API.students.create(payload); await loadProfessor(); closeModal(); toast('Aluno adicionado ✓', 'check'); render('prof'); }
+        catch (e) { toast(authError(e), 'info'); }
+        return;
+      }
+      S.addAluno(nome, belt, graus);
       closeModal(); toast('Aluno adicionado ✓', 'check'); render('prof');
     });
   }
@@ -1032,13 +1131,23 @@
       <div class="field"><label>Destaques do dia</label><textarea id="av-dest" rows="2" placeholder="O que o aluno fez no treino..."></textarea></div>
       <div class="field"><label>Pontos a desenvolver</label><textarea id="av-mel" rows="2" placeholder="Opcional"></textarea></div>
       <button class="btn btn--teal btn--block" id="av-save">${svg('check')} Salvar avaliação</button>`);
-    back.querySelector('#av-save').addEventListener('click', () => {
+    back.querySelector('#av-save').addEventListener('click', async () => {
       const exec = back.querySelector('#av-exec').value.trim();
       const pos = back.querySelector('#av-pos').value.trim();
       const dest = back.querySelector('#av-dest').value.trim();
       const mel = back.querySelector('#av-mel').value.trim();
       if (!exec && !pos && !dest && !mel) return toast('Escreva ao menos uma observação', 'info');
-      S.addAvaliacao(selectedAluno, { aula: back.querySelector('#av-aula').value, execucao: exec, posicoes: pos, destaques: dest, melhorar: mel });
+      const aula = back.querySelector('#av-aula').value;
+      const payload = { aula, execucao: exec, posicoes: pos, destaques: dest, melhorar: mel };
+      if (CLOUD) {
+        try {
+          await API.evaluations.add(selectedAluno, SESSION.user.id, payload);
+          const a = S.getAluno(selectedAluno); a.avaliacoes.unshift(Object.assign({ date: S.todayISO() }, payload));
+          closeModal(); toast('Avaliação registrada ✓', 'check'); render('prof-aluno');
+        } catch (e) { toast(authError(e), 'info'); }
+        return;
+      }
+      S.addAvaliacao(selectedAluno, payload);
       closeModal(); toast('Avaliação registrada ✓', 'check'); render('prof-aluno');
     });
   }
@@ -1050,9 +1159,17 @@
       <div class="msub">Aparece para ${firstName(a.nome)} no "Caminho das faixas".</div>
       <div class="field"><label>Mensagem</label><textarea id="msg-t" rows="4" placeholder="Escreva um incentivo, orientação ou meta..."></textarea></div>
       <button class="btn btn--teal btn--block" id="msg-save">${svg('send')} Enviar</button>`);
-    back.querySelector('#msg-save').addEventListener('click', () => {
+    back.querySelector('#msg-save').addEventListener('click', async () => {
       const t = back.querySelector('#msg-t').value.trim();
       if (!t) return toast('Escreva a mensagem', 'info');
+      if (CLOUD) {
+        try {
+          await API.messages.add(selectedAluno, SESSION.user.id, t);
+          const a = S.getAluno(selectedAluno); a.mensagens.unshift({ date: S.todayISO(), texto: t });
+          closeModal(); toast('Mensagem enviada ✓', 'send'); render('prof-aluno');
+        } catch (e) { toast(authError(e), 'info'); }
+        return;
+      }
       S.addMensagem(selectedAluno, t); closeModal(); toast('Mensagem enviada ✓', 'send'); render('prof-aluno');
     });
   }
@@ -1068,12 +1185,422 @@
     back.querySelector('#pr-belt').addEventListener('change', e => {
       back.querySelector('#pr-graus').innerHTML = grausOptions(e.target.value, 0);
     });
-    back.querySelector('#pr-save').addEventListener('click', () => {
+    back.querySelector('#pr-save').addEventListener('click', async () => {
       const belt = back.querySelector('#pr-belt').value;
       const graus = parseInt(back.querySelector('#pr-graus').value) || 0;
+      if (CLOUD) {
+        try {
+          await API.students.update(selectedAluno, { belt, graus, categoria: deriveCategoria(belt, 'adulto') });
+          try { await API.graduations.add(selectedAluno, SESSION.user.id, belt, graus); } catch (e) {}
+          const a = S.getAluno(selectedAluno); a.belt = belt; a.graus = graus;
+          const st = SESSION.students.find(s => s.id === selectedAluno); if (st) { st.belt = belt; st.graus = graus; }
+          closeModal(); toast('Graduação atualizada 🥋', 'check'); render('prof-aluno');
+        } catch (e) { toast(authError(e), 'info'); }
+        return;
+      }
       S.promover(selectedAluno, belt, graus);
       if (selectedAluno === 'me') S.updatePerfil({ categoria: deriveCategoria(belt, S.state.perfil.categoria) });
       closeModal(); toast('Graduação atualizada 🥋', 'check'); render('prof-aluno');
+    });
+  }
+
+  /* ================================================================
+     NUVEM · autenticação, papéis e portal dos pais (Supabase)
+     ================================================================ */
+  const API = window.LACUS_API;
+  let CLOUD = false;
+  let SESSION = { user: null, profile: null, role: null, studentId: null, students: [], childId: null, readOnly: false };
+  let CLOUD_AVISOS = [], CLOUD_EVENTOS = [], CLOUD_REQS = [];
+  let authReg = { role: 'aluno' };
+
+  const beltShort = id => (beltById(id).short || (beltById(id).nome || '').replace('Faixa ', ''));
+
+  /* ---- telas de acesso ---- */
+  function showAuth(screen) {
+    document.body.classList.add('auth-mode');
+    document.body.classList.remove('prof-mode');
+    tabbar.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    view.innerHTML = authView(screen || 'welcome');
+    window.scrollTo(0, 0);
+  }
+  function authView(screen) {
+    if (screen === 'login') return `
+      <div class="auth-wrap stagger">
+        <div class="auth-logo">${logoSVG(64)}</div>
+        <h1 class="auth-h">Entrar</h1>
+        <p class="auth-sub">Bem-vindo de volta ao LACUS Jiu-Jitsu.</p>
+        <div class="field"><label>E-mail</label><input id="au-email" type="email" inputmode="email" placeholder="voce@exemplo.com"/></div>
+        <div class="field"><label>Senha</label><input id="au-pass" type="password" placeholder="••••••••"/></div>
+        <button class="btn btn--teal btn--block" data-authdo="login">${svg('check')} Entrar na conta</button>
+        <div class="auth-alt">Ainda não tem conta? <a class="link" data-auth="register">Registre-se</a></div>
+      </div>`;
+    if (screen === 'register') return `
+      <div class="auth-wrap stagger">
+        <div class="auth-top"><button class="icon-btn" data-auth="welcome">${svg('arrowLeft')}</button></div>
+        <h1 class="auth-h">Criar conta</h1>
+        <p class="auth-sub">Quem é você na academia?</p>
+        <div class="role-row">
+          <button class="role-chip ${authReg.role==='aluno'?'on':''}" data-role="aluno">${svg('user')}<span>Aluno (adulto)</span></button>
+          <button class="role-chip ${authReg.role==='responsavel'?'on':''}" data-role="responsavel">${svg('users')}<span>Responsável</span></button>
+          <button class="role-chip ${authReg.role==='professor'?'on':''}" data-role="professor">${svg('whistle')}<span>Professor</span></button>
+        </div>
+        <div class="role-note">${authReg.role==='responsavel' ? 'Você cria sua conta e depois vincula seu(s) filho(s) com o professor.' : authReg.role==='professor' ? 'Conta de professor: gerencia a turma, avaliações e avisos.' : 'Conta do próprio aluno adulto.'}</div>
+        <div class="field"><label>Nome completo</label><input id="rg-nome" type="text" maxlength="60" placeholder="Seu nome"/></div>
+        <div class="field"><label>E-mail</label><input id="rg-email" type="email" inputmode="email" placeholder="voce@exemplo.com"/></div>
+        <div class="field"><label>Telefone / WhatsApp</label><input id="rg-fone" type="tel" inputmode="tel" placeholder="(82) 99999-0000"/></div>
+        <div class="field"><label>Senha (mín. 6)</label><input id="rg-pass" type="password" placeholder="••••••••"/></div>
+        <button class="btn btn--teal btn--block" data-authdo="register">${svg('check')} Criar conta</button>
+        <div class="auth-alt">Já tem conta? <a class="link" data-auth="login">Entrar</a></div>
+      </div>`;
+    if (screen === 'confirm') return `
+      <div class="auth-wrap stagger">
+        <div class="auth-logo">${logoSVG(64)}</div>
+        <h1 class="auth-h">Confirme seu e-mail</h1>
+        <p class="auth-sub">Enviamos um link para o seu e-mail. Confirme e depois entre na conta.</p>
+        <button class="btn btn--teal btn--block" data-auth="login">${svg('check')} Ir para o login</button>
+      </div>`;
+    // welcome
+    return `
+      <div class="auth-wrap auth-welcome stagger">
+        <div class="auth-logo">${logoSVG(80)}</div>
+        <div class="wordmark" style="font-size:24px;letter-spacing:.2em"><b style="color:var(--teal)">LA</b>CUS</div>
+        <div class="auth-tag">Domine a arte. Modele o caráter.</div>
+        <p class="auth-sub">Acompanhe sua evolução no Jiu-Jitsu — treinos, graduação e o feedback do seu professor.</p>
+        <button class="btn btn--teal btn--block" data-auth="login">Entrar</button>
+        <div class="spacer"></div>
+        <button class="btn btn--ghost btn--block" data-auth="register">Criar conta</button>
+      </div>`;
+  }
+
+  async function handleAuth(action) {
+    try {
+      if (action === 'login') {
+        const email = (document.getElementById('au-email') || {}).value || '';
+        const pass = (document.getElementById('au-pass') || {}).value || '';
+        if (!email || !pass) return toast('Preencha e-mail e senha', 'info');
+        toast('Entrando…', 'info');
+        await API.auth.signIn(email, pass);
+        await afterLogin();
+      } else if (action === 'register') {
+        const nome = (document.getElementById('rg-nome') || {}).value.trim();
+        const email = (document.getElementById('rg-email') || {}).value.trim();
+        const fone = (document.getElementById('rg-fone') || {}).value.trim();
+        const pass = (document.getElementById('rg-pass') || {}).value;
+        if (!nome || !email || !pass) return toast('Preencha nome, e-mail e senha', 'info');
+        if (pass.length < 6) return toast('A senha precisa de ao menos 6 caracteres', 'info');
+        const res = await API.auth.signUp(email, pass, { role: authReg.role, nome, telefone: fone });
+        if (res && res.session) { await afterLogin(); }
+        else { showAuth('confirm'); }
+      } else if (action === 'logout') {
+        await API.auth.signOut();
+        CLOUD = false; SESSION = { user: null, profile: null, role: null, studentId: null, students: [], childId: null, readOnly: false };
+        document.body.classList.remove('prof-mode');
+        showAuth('welcome');
+      }
+    } catch (e) { toast(authError(e), 'info'); }
+  }
+  function authError(e) {
+    const m = (e && e.message || '').toLowerCase();
+    if (m.includes('invalid login')) return 'E-mail ou senha incorretos';
+    if (m.includes('already registered') || m.includes('already been registered')) return 'Este e-mail já tem conta';
+    if (m.includes('confirm')) return 'Confirme seu e-mail para entrar';
+    return e && e.message ? e.message : 'Não foi possível concluir';
+  }
+
+  async function afterLogin() {
+    const profile = await API.auth.profile();
+    SESSION.user = await API.auth.getUser();
+    SESSION.profile = profile;
+    SESSION.role = profile ? profile.role : 'aluno';
+    CLOUD = true;
+    document.body.classList.remove('auth-mode');
+    // carrega avisos/eventos (comuns)
+    try { CLOUD_AVISOS = await API.announcements.list(); CLOUD_EVENTOS = await API.events.list(); } catch (e) {}
+    if (SESSION.role === 'professor') { await loadProfessor(); professorUnlocked = true; navigate('prof'); return; }
+    if (SESSION.role === 'responsavel') { await loadParent(); return; }
+    await loadAluno();
+  }
+
+  /* ---- carregamento por papel ---- */
+  function mapStudentToAluno(st) {
+    return { id: st.id, nome: st.nome, belt: st.belt || 'white', graus: st.graus || 0, categoria: st.categoria || 'adulto', avaliacoes: [], mensagens: [], _cloud: st };
+  }
+  async function loadProfessor() {
+    const list = await API.students.listForProfessor();
+    SESSION.students = list;
+    S.state.coach.alunos = list.map(mapStudentToAluno);
+    try { CLOUD_REQS = await API.requests.listPending(); } catch (e) { CLOUD_REQS = []; }
+  }
+  async function hydrateStudentState(st, evals, msgs, checkins, readOnly) {
+    const p = S.state.perfil;
+    p.nome = st.nome; p.categoria = st.categoria || deriveCategoria(st.belt, 'adulto');
+    p.belt = st.belt || 'white'; p.graus = st.graus || 0;
+    p.desde = (st.data_matricula || '').slice(0, 4) || '—';
+    S.state.financeiro = { status: st.pagamento_status === 'em_dia' ? 'em-dia' : 'pendente', vence: st.vencimento_dia ? ('dia ' + st.vencimento_dia) : '—' };
+    S.state.checkins = (checkins || []).map(c => ({ date: c.data, aula: c.aula, hora: c.hora }));
+    let me = S.getAluno('me');
+    if (!me) { me = { id: 'me', nome: st.nome, belt: p.belt, graus: p.graus, avaliacoes: [], mensagens: [] }; S.state.coach.alunos.unshift(me); }
+    me.belt = p.belt; me.graus = p.graus; me.nome = st.nome;
+    me.avaliacoes = (evals || []).map(e => ({ date: e.data, aula: e.aula, execucao: e.execucao, posicoes: e.posicoes, destaques: e.destaques, melhorar: e.melhorar }));
+    me.mensagens = (msgs || []).map(m => ({ date: m.data, texto: m.texto }));
+    SESSION.readOnly = !!readOnly;
+  }
+  async function loadAluno() {
+    const mine = await API.students.getMine();
+    if (!mine.length) { showOnboarding('aluno'); return; }
+    const st = mine[0]; SESSION.studentId = st.id;
+    const [evals, msgs, checkins] = await Promise.all([API.evaluations.list(st.id), API.messages.list(st.id), API.checkins.list(st.id)]);
+    await hydrateStudentState(st, evals, msgs, checkins, false);
+    navigate('inicio');
+  }
+  async function loadParent() {
+    const kids = await API.students.getForGuardian();
+    SESSION.students = kids;
+    if (!kids.length) { showOnboarding('responsavel'); return; }
+    navigate('responsavel');
+  }
+  async function openChild(studentId) {
+    const st = SESSION.students.find(s => s.id === studentId) || await API.students.get(studentId);
+    SESSION.studentId = st.id; SESSION.childId = st.id;
+    const [evals, msgs, checkins] = await Promise.all([API.evaluations.list(st.id), API.messages.list(st.id), API.checkins.list(st.id)]);
+    await hydrateStudentState(st, evals, msgs, checkins, true);
+    navigate('evolucao');
+  }
+
+  /* ---- onboarding: solicitar acesso ao professor ---- */
+  function showOnboarding(tipo) {
+    document.body.classList.remove('prof-mode');
+    document.body.classList.add('auth-mode');
+    view.innerHTML = `
+      <div class="auth-wrap stagger">
+        <div class="auth-logo">${logoSVG(56)}</div>
+        <h1 class="auth-h">${tipo === 'responsavel' ? 'Vincular meu filho(a)' : 'Solicitar acesso'}</h1>
+        <div class="auth-note">${svg('info')}<span>Informe o e-mail do seu professor para solicitar acesso${tipo === 'responsavel' ? ' e vincular seu(s) filho(s)' : ''}.</span></div>
+        <div class="field"><label>E-mail do professor</label><input id="ob-prof" type="email" inputmode="email" placeholder="professor@exemplo.com"/></div>
+        ${tipo === 'responsavel' ? `<div class="field"><label>Nome do filho(a)</label><input id="ob-filho" type="text" placeholder="Nome da criança"/></div>` : ''}
+        <div class="field"><label>Mensagem (opcional)</label><textarea id="ob-msg" rows="2" placeholder="Ex.: treino às segundas e quartas"></textarea></div>
+        <button class="btn btn--teal btn--block" data-authdo="sendreq" data-tipo="${tipo}">${svg('send')} Enviar solicitação</button>
+        <div class="spacer"></div>
+        <button class="btn btn--ghost btn--block" data-authdo="logout">Sair</button>
+      </div>`;
+    window.scrollTo(0, 0);
+  }
+  async function sendRequest(tipo) {
+    try {
+      const profEl = document.getElementById('ob-prof');
+      const profEmail = profEl ? profEl.value.trim() : '';
+      if (!profEmail) return toast('Informe o e-mail do professor', 'info');
+      const filhoEl = document.getElementById('ob-filho');
+      const filho = filhoEl ? filhoEl.value.trim() : '';
+      const msgEl = document.getElementById('ob-msg');
+      const msg = msgEl ? msgEl.value.trim() : '';
+      const nome = SESSION.profile ? SESSION.profile.nome : '';
+      await API.requests.create({ nome, email: SESSION.user.email, tipo, professor_email: profEmail, mensagem: (filho ? ('Filho(a): ' + filho + '. ') : '') + msg });
+      view.innerHTML = `
+        <div class="auth-wrap stagger">
+          <div class="auth-logo">${logoSVG(56)}</div>
+          <h1 class="auth-h">Solicitação enviada ✓</h1>
+          <p class="auth-sub">Avisaremos quando o professor liberar seu acesso. Você já pode fechar o app.</p>
+          <button class="btn btn--ghost btn--block" data-authdo="logout">Sair</button>
+        </div>`;
+    } catch (e) { toast(authError(e), 'info'); }
+  }
+
+  /* ---- PROFESSOR: telas extras (nuvem) ---- */
+  function profMenu(active) {
+    const item = (r, t) => `<button class="pm-chip ${active === r ? 'on' : ''}" data-go="${r}">${t}</button>`;
+    return `<div class="pm-row">
+      ${item('prof', 'Turma')}
+      ${item('prof-solicitacoes', 'Solicitações' + (CLOUD_REQS.length ? ' (' + CLOUD_REQS.length + ')' : ''))}
+      ${item('prof-financeiro', 'Financeiro')}
+      ${item('prof-dashboard', 'Dashboard')}
+      ${item('prof-avisos', 'Avisos')}
+      ${item('prof-eventos', 'Eventos')}
+    </div>`;
+  }
+  function profTopBar() {
+    return `<div class="prof-top">
+      <span class="prof-badge">${svg('whistle')} ${SESSION.profile ? firstName(SESSION.profile.nome || 'Professor') : 'Professor'}</span>
+      <button class="icon-btn" data-authdo="logout" aria-label="Sair">${svg('x')}</button>
+    </div>`;
+  }
+
+  function idade(dn) { if (!dn) return null; const d = new Date(dn + 'T00:00'); const t = new Date(); let a = t.getFullYear() - d.getFullYear(); const m = t.getMonth() - d.getMonth(); if (m < 0 || (m === 0 && t.getDate() < d.getDate())) a--; return a; }
+  function faixaEtaria(a) { if (a == null) return 'Sem idade'; if (a <= 12) return 'Infantil (≤12)'; if (a <= 15) return 'Juvenil (13–15)'; if (a <= 17) return 'Adolescente (16–17)'; return 'Adulto (18+)'; }
+
+  function viewProfDashboard() {
+    const sts = SESSION.students || [];
+    const ativos = sts.filter(s => s.status !== 'inativo').length;
+    const emDia = sts.filter(s => s.pagamento_status === 'em_dia').length;
+    const pend = sts.length - emDia;
+    // por faixa etária
+    const grupos = {};
+    sts.forEach(s => { const g = faixaEtaria(idade(s.data_nascimento)); grupos[g] = (grupos[g] || 0) + 1; });
+    const maxG = Math.max(1, ...Object.values(grupos));
+    const bars = Object.keys(grupos).map(g => `
+      <div class="goal"><div class="gh"><span class="gt">${g}</span><span class="gv">${grupos[g]}</span></div>
+      <div class="bar"><span style="width:${Math.round(grupos[g]/maxG*100)}%"></span></div></div>`).join('') || emptyState('Sem alunos ainda', 'Cadastre alunos na Turma.');
+    return `${profTopBar()}${profMenu('prof-dashboard')}
+      <div class="phead"><span class="eyebrow">Visão geral</span><h1 class="page-title">Dashboard</h1></div>
+      <div class="stat-grid stagger">
+        ${stat('users','teal', sts.length, 'Alunos')}
+        ${stat('flame','green', ativos, 'Ativos')}
+        ${stat('card','gold', emDia, 'Pagamentos em dia')}
+        ${stat('info','purple', pend, 'Pendências')}
+      </div>
+      <div class="card stagger"><div class="card-head"><span class="section-title">Alunos por faixa etária</span></div>${bars}</div>`;
+  }
+
+  function viewProfFinanceiro() {
+    const sts = (SESSION.students || []).slice().sort((a,b)=> (a.pagamento_status==='em_dia') - (b.pagamento_status==='em_dia'));
+    const rows = sts.map(s => {
+      const ok = s.pagamento_status === 'em_dia';
+      return `<button class="list-item" data-fin="${s.id}" style="width:100%">
+        <div class="prow-av" style="width:38px;height:38px;font-size:15px">${initials(s.nome)}</div>
+        <div class="lt"><div class="a">${s.nome}</div><div class="b">${beltShort(s.belt||'white')}${s.vencimento_dia?(' · vence dia '+s.vencimento_dia):''}</div></div>
+        <span class="pill ${ok?'ok':'warn'}">${ok?'Em dia':'Pendente'}</span>
+      </button>`;
+    }).join('') || emptyState('Sem alunos', 'Cadastre alunos na Turma.');
+    return `${profTopBar()}${profMenu('prof-financeiro')}
+      <div class="phead"><span class="eyebrow">Mensalidades</span><h1 class="page-title">Financeiro</h1><p>Toque num aluno para alternar o status.</p></div>
+      <div class="card list-card stagger">${rows}</div>`;
+  }
+
+  function viewProfSolicitacoes() {
+    const rows = CLOUD_REQS.length ? CLOUD_REQS.map(r => `
+      <div class="card">
+        <div class="ce-top"><span class="nt-av">${svg('users')} ${r.tipo === 'responsavel' ? 'Responsável' : 'Aluno'}</span><span class="nd">${(r.created_at||'').slice(0,10)}</span></div>
+        <div style="font-family:var(--fh);font-size:16px">${r.nome || r.email}</div>
+        <div class="ce-line"><b>E-mail:</b> ${r.email||'—'}</div>
+        ${r.mensagem ? `<div class="ce-line">${r.mensagem}</div>` : ''}
+        <div class="prof-actions" style="margin-top:12px">
+          <button class="btn btn--teal" data-approve="${r.id}">${svg('check')} Aprovar</button>
+          <button class="btn btn--ghost" data-reject="${r.id}">${svg('x')} Recusar</button>
+        </div>
+      </div>`).join('') : emptyState('Nenhuma solicitação', 'Pedidos de acesso aparecem aqui.');
+    return `${profTopBar()}${profMenu('prof-solicitacoes')}
+      <div class="phead"><span class="eyebrow">Acesso</span><h1 class="page-title">Solicitações</h1></div>
+      <div class="stagger">${rows}</div>`;
+  }
+
+  function viewProfAvisos() {
+    const rows = CLOUD_AVISOS.length ? CLOUD_AVISOS.map(a => `
+      <div class="notice">
+        <div class="nh"><span class="nt">Aviso</span><span class="nd">${(a.data||'').slice(0,10)}</span>
+          <button class="mini-x" data-del-aviso="${a.id}">${svg('x')}</button></div>
+        <div class="ntitle">${a.titulo}</div><div class="nbody">${a.texto||''}</div>
+      </div>`).join('') : emptyState('Sem avisos', 'Crie o primeiro aviso.');
+    return `${profTopBar()}${profMenu('prof-avisos')}
+      <div class="phead"><span class="eyebrow">Comunicados</span><h1 class="page-title">Avisos</h1></div>
+      <button class="btn btn--gold btn--block" data-action="novo-aviso">${svg('plus')} Novo aviso</button>
+      <div class="spacer"></div><div class="card stagger">${rows}</div>`;
+  }
+  function viewProfEventos() {
+    const rows = CLOUD_EVENTOS.length ? CLOUD_EVENTOS.map(a => `
+      <div class="notice">
+        <div class="nh"><span class="nt evt">Evento</span><span class="nd">${(a.data||'').slice(0,10)}</span>
+          <button class="mini-x" data-del-evento="${a.id}">${svg('x')}</button></div>
+        <div class="ntitle">${a.titulo}</div><div class="nbody">${a.texto||''}</div>
+      </div>`).join('') : emptyState('Sem eventos', 'Crie o primeiro evento.');
+    return `${profTopBar()}${profMenu('prof-eventos')}
+      <div class="phead"><span class="eyebrow">Calendário</span><h1 class="page-title">Eventos</h1></div>
+      <button class="btn btn--gold btn--block" data-action="novo-evento">${svg('plus')} Novo evento</button>
+      <div class="spacer"></div><div class="card stagger">${rows}</div>`;
+  }
+
+  /* ---- RESPONSÁVEL: portal dos pais ---- */
+  function viewResponsavel() {
+    const kids = SESSION.students || [];
+    const rows = kids.map(k => `
+      <button class="prof-row" data-child="${k.id}">
+        <div class="prow-av">${initials(k.nome)}</div>
+        <div class="prow-info"><div class="nm">${k.nome}</div>
+          <div class="meta">${beltDot(beltById(k.belt||'white'))}${beltShort(k.belt||'white')} · ${k.graus||0} ${k.graus===1?'grau':'graus'}</div>
+          <div class="last">Ver evolução e avaliações</div></div>
+        <span class="chev">${svg('chevron')}</span>
+      </button>`).join('') || emptyState('Nenhum filho vinculado', 'Aguarde o professor aprovar o vínculo.');
+    return `
+      <div class="prof-top"><span class="prof-badge">${svg('users')} ${SESSION.profile?firstName(SESSION.profile.nome||'Responsável'):'Responsável'}</span>
+        <button class="icon-btn" data-authdo="logout">${svg('x')}</button></div>
+      <div class="phead"><span class="eyebrow">Acompanhamento</span><h1 class="page-title">Meus filhos</h1><p>Acompanhe a evolução e o feedback do professor.</p></div>
+      <div class="stagger">${rows}</div>`;
+  }
+
+  /* ---- ações da nuvem (professor) ---- */
+  async function openStudentCloud(id) {
+    try {
+      const a = S.getAluno(id); if (!a) return;
+      const [evals, msgs] = await Promise.all([API.evaluations.list(id), API.messages.list(id)]);
+      a.avaliacoes = evals.map(e => ({ date: e.data, aula: e.aula, execucao: e.execucao, posicoes: e.posicoes, destaques: e.destaques, melhorar: e.melhorar }));
+      a.mensagens = msgs.map(m => ({ date: m.data, texto: m.texto }));
+      navigate('prof-aluno');
+    } catch (e) { toast(authError(e), 'info'); }
+  }
+  async function reloadStudentDetail() {
+    if (!CLOUD || !selectedAluno) return;
+    const a = S.getAluno(selectedAluno); if (!a) return;
+    const [evals, msgs] = await Promise.all([API.evaluations.list(selectedAluno), API.messages.list(selectedAluno)]);
+    a.avaliacoes = evals.map(e => ({ date: e.data, aula: e.aula, execucao: e.execucao, posicoes: e.posicoes, destaques: e.destaques, melhorar: e.melhorar }));
+    a.mensagens = msgs.map(m => ({ date: m.data, texto: m.texto }));
+    render('prof-aluno');
+  }
+  async function approveRequest(id) {
+    const r = CLOUD_REQS.find(x => x.id === id); if (!r) return;
+    try {
+      const isResp = r.tipo === 'responsavel';
+      const st = await API.students.create({
+        professor_id: SESSION.user.id,
+        account_id: isResp ? null : (r.requester_id || null),
+        nome: r.nome || r.email, categoria: isResp ? 'kids' : 'adulto', belt: 'white', graus: 0,
+      });
+      if (isResp && r.requester_id) { try { await API.guardians.link(st.id, r.requester_id, 'responsável'); } catch (e) {} }
+      await API.requests.setStatus(id, 'aprovado');
+      CLOUD_REQS = CLOUD_REQS.filter(x => x.id !== id);
+      await loadProfessor();
+      toast('Acesso aprovado ✓', 'check'); render('prof-solicitacoes');
+    } catch (e) { toast(authError(e), 'info'); }
+  }
+  async function rejectRequest(id) {
+    try { await API.requests.setStatus(id, 'recusado'); CLOUD_REQS = CLOUD_REQS.filter(x => x.id !== id); render('prof-solicitacoes'); toast('Solicitação recusada', 'info'); }
+    catch (e) { toast(authError(e), 'info'); }
+  }
+  async function toggleFinanceiro(id) {
+    const st = SESSION.students.find(s => s.id === id); if (!st) return;
+    const novo = st.pagamento_status === 'em_dia' ? 'pendente' : 'em_dia';
+    try { const up = await API.students.update(id, { pagamento_status: novo }); st.pagamento_status = up.pagamento_status; render('prof-financeiro'); }
+    catch (e) { toast(authError(e), 'info'); }
+  }
+  async function delAviso(id) { try { await API.announcements.remove(id); CLOUD_AVISOS = CLOUD_AVISOS.filter(a => a.id !== id); render('prof-avisos'); toast('Aviso excluído', 'info'); } catch (e) { toast(authError(e), 'info'); } }
+  async function delEvento(id) { try { await API.events.remove(id); CLOUD_EVENTOS = CLOUD_EVENTOS.filter(a => a.id !== id); render('prof-eventos'); toast('Evento excluído', 'info'); } catch (e) { toast(authError(e), 'info'); } }
+
+  function openAvisoModal() {
+    const back = openModal(`
+      <h3>Novo aviso</h3>
+      <div class="field"><label>Título</label><input id="av-t" type="text" maxlength="80" placeholder="Ex.: Graduação de inverno"/></div>
+      <div class="field"><label>Mensagem</label><textarea id="av-x" rows="3" placeholder="Detalhes..."></textarea></div>
+      <div class="field"><label>Data</label><input id="av-d" type="date"/></div>
+      <button class="btn btn--gold btn--block" id="av-ok">${svg('check')} Publicar aviso</button>`);
+    back.querySelector('#av-ok').addEventListener('click', async () => {
+      const titulo = back.querySelector('#av-t').value.trim(); if (!titulo) return toast('Informe o título', 'info');
+      try {
+        const a = await API.announcements.create(SESSION.user.id, { titulo, texto: back.querySelector('#av-x').value.trim(), data: back.querySelector('#av-d').value || undefined });
+        CLOUD_AVISOS.unshift(a); closeModal(); toast('Aviso publicado ✓', 'check'); render('prof-avisos');
+      } catch (e) { toast(authError(e), 'info'); }
+    });
+  }
+  function openEventoModal() {
+    const back = openModal(`
+      <h3>Novo evento</h3>
+      <div class="field"><label>Título</label><input id="ev-t" type="text" maxlength="80" placeholder="Ex.: Copa LACUS Interna"/></div>
+      <div class="field"><label>Descrição</label><textarea id="ev-x" rows="3" placeholder="Detalhes..."></textarea></div>
+      <div class="field"><label>Data</label><input id="ev-d" type="date"/></div>
+      <button class="btn btn--gold btn--block" id="ev-ok">${svg('check')} Publicar evento</button>`);
+    back.querySelector('#ev-ok').addEventListener('click', async () => {
+      const titulo = back.querySelector('#ev-t').value.trim(); if (!titulo) return toast('Informe o título', 'info');
+      try {
+        const a = await API.events.create(SESSION.user.id, { titulo, texto: back.querySelector('#ev-x').value.trim(), data: back.querySelector('#ev-d').value || undefined, tipo: 'evento' });
+        CLOUD_EVENTOS.unshift(a); closeModal(); toast('Evento publicado ✓', 'check'); render('prof-eventos');
+      } catch (e) { toast(authError(e), 'info'); }
     });
   }
 
@@ -1085,8 +1612,12 @@
     evolucao: viewEvolucao, perfil: viewPerfil,
     tecnicas: viewTecnicas, avisos: viewAvisos, eventos: viewEventos, financeiro: viewFinanceiro,
     prof: viewProf, 'prof-aluno': viewProfAluno,
+    'prof-dashboard': viewProfDashboard, 'prof-financeiro': viewProfFinanceiro,
+    'prof-solicitacoes': viewProfSolicitacoes, 'prof-avisos': viewProfAvisos, 'prof-eventos': viewProfEventos,
+    responsavel: viewResponsavel,
   };
-  const PROF_ROUTES = ['prof', 'prof-aluno'];
+  const PROF_ROUTES = ['prof', 'prof-aluno', 'prof-dashboard', 'prof-financeiro', 'prof-solicitacoes', 'prof-avisos', 'prof-eventos'];
+  const NOTAB_ROUTES = PROF_ROUTES.concat(['responsavel']);
   let currentRoute = 'inicio';
   let lastMain = 'inicio';
   let professorUnlocked = false;
@@ -1094,18 +1625,18 @@
   function render(route) {
     const fn = VIEWS[route] || VIEWS.inicio;
     view.innerHTML = fn();
-    document.body.classList.toggle('prof-mode', PROF_ROUTES.includes(route));
+    const notab = NOTAB_ROUTES.includes(route) || (CLOUD && SESSION.readOnly);
+    document.body.classList.toggle('prof-mode', notab);
     view.scrollTop = 0;
     window.scrollTo(0, 0);
   }
   function navigate(route) {
-    if (!VIEWS[route]) route = 'inicio';
-    // área restrita: exige PIN
+    if (!VIEWS[route]) route = CLOUD ? (SESSION.role === 'professor' ? 'prof' : SESSION.role === 'responsavel' ? 'responsavel' : 'inicio') : 'inicio';
+    // área do professor exige PIN só no modo local (sem login)
     if (PROF_ROUTES.includes(route) && !professorUnlocked) { openProfessorGate(); return; }
     currentRoute = route;
     if (MAIN_ROUTES.includes(route)) lastMain = route;
     render(route);
-    // tab active state
     tabbar.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.route === route));
     location.hash = route;
   }
@@ -1116,13 +1647,25 @@
   });
 
   window.addEventListener('hashchange', () => {
+    if (document.body.classList.contains('auth-mode')) return;
     const r = location.hash.replace('#', '');
     if (r && VIEWS[r] && r !== currentRoute) navigate(r);
   });
 
-  // boot
-  const initial = location.hash.replace('#', '');
-  navigate(VIEWS[initial] && !PROF_ROUTES.includes(initial) ? initial : 'inicio');
+  // boot — exige login quando o back-end está ativo
+  async function boot() {
+    if (API && API.enabled) {
+      try {
+        const session = await API.auth.getSession();
+        if (session) { await afterLogin(); return; }
+      } catch (e) { /* cai no login */ }
+      showAuth('welcome');
+      return;
+    }
+    const initial = location.hash.replace('#', '');
+    navigate(VIEWS[initial] && !PROF_ROUTES.includes(initial) ? initial : 'inicio');
+  }
+  boot();
 
   // service worker (only over http/https; ignora em file://)
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {

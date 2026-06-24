@@ -1,10 +1,12 @@
 /* LACUS · service worker — offline-first cache */
-const CACHE = 'lacus-v1';
+const CACHE = 'lacus-v2';
 const ASSETS = [
   './',
   './index.html',
   './css/styles.css',
+  './js/config.js',
   './js/data.js',
+  './js/backend.js',
   './js/store.js',
   './js/app.js',
   './manifest.webmanifest',

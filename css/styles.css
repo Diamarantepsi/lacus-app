@@ -504,8 +504,10 @@ h1, h2, h3 { font-family: var(--fh); font-weight: 600; letter-spacing: 0.01em; l
 .modal {
   width: 100%; max-width: 520px; background: linear-gradient(180deg, var(--s2), var(--s1));
   border: 1px solid var(--border); border-bottom: none; border-radius: var(--r-lg) var(--r-lg) 0 0;
-  padding: 22px var(--pad) calc(28px + env(safe-area-inset-bottom));
+  padding: 14px var(--pad) calc(28px + env(safe-area-inset-bottom));
   transform: translateY(100%); transition: 0.3s cubic-bezier(0.22,1,0.36,1);
+  max-height: 90vh; max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .modal-back.show .modal { transform: none; }
 .modal .grip { width: 38px; height: 4px; border-radius: 2px; background: var(--border-strong); margin: 0 auto 18px; }
